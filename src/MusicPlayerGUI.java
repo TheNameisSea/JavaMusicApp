@@ -20,6 +20,7 @@ public class MusicPlayerGUI extends JFrame {
     private JFileChooser jFileChooser;
 
     private JLabel songTitle, songArtist;
+    private JLabel songImage;
     private JPanel playbackBtns;
 
 
@@ -64,8 +65,8 @@ public class MusicPlayerGUI extends JFrame {
         addToolbar();
 
         // Load music image
-        JLabel songImage = new JLabel(loadImage("src/assets/record.png"));
-        songImage.setBounds(0, 50, getWidth()-20, 225);
+        songImage = new JLabel(loadImage("src/assets/pngegg.png"));
+        songImage.setBounds(0, 50, getWidth()-10, 225);
         add(songImage);
 
         // Music title
@@ -131,6 +132,9 @@ public class MusicPlayerGUI extends JFrame {
                     // Update song metadata
                     updateSongTitleAndArtist(song);
 
+                    // Update image
+                    updateCoverImage(song);
+
                     // Toggle Play Pause button
                     enablePauseButtonDisablePlayButton();
 
@@ -171,6 +175,13 @@ public class MusicPlayerGUI extends JFrame {
         JButton playButton = new JButton(loadImage("src/assets/play.png"));
         playButton.setBorderPainted(false);
         playButton.setBackground(null);
+        playButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                enablePauseButtonDisablePlayButton();
+                musicPlayer.playCurrentSong();
+            }
+        });
         playbackBtns.add(playButton);
 
         // Pause button
@@ -200,6 +211,16 @@ public class MusicPlayerGUI extends JFrame {
         songTitle.setText(song.getSongTitle());
         songArtist.setText(song.getSongArtist());
     }
+
+    private void updateCoverImage(Song song){
+        BufferedImage cover = song.getCoverImage();
+        if (cover != null) {
+            Image scaledImage = cover.getScaledInstance(225, 225, Image.SCALE_SMOOTH);
+            songImage.setIcon(new ImageIcon(scaledImage));
+        }
+    }
+
+
 
     private void enablePauseButtonDisablePlayButton(){
 

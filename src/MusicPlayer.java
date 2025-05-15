@@ -17,12 +17,21 @@ public class MusicPlayer extends PlaybackListener {
     // Play/pause indicator
     private boolean isPaused;
 
+    // Current frame
+    private int currentFrame;
+
     // Constructor
     public MusicPlayer(){
 
     }
 
     public void loadSong(Song song){
+
+        if (advancedPlayer!=null){
+            advancedPlayer.stop();
+            advancedPlayer.close();
+            advancedPlayer = null;
+        }
 
         currentSong = song;
 
@@ -51,6 +60,8 @@ public class MusicPlayer extends PlaybackListener {
 
     public void playCurrentSong(){
 
+        if (currentSong == null){return;}
+
         try {
             // Read auido data
             FileInputStream fileInputStream = new FileInputStream(currentSong.getFilePath());
@@ -76,8 +87,12 @@ public class MusicPlayer extends PlaybackListener {
             @Override
             public void run() {
                 try {
-                    // Play Music
-                    advancedPlayer.play();
+                    if (isPaused){
+                        advancedPlayer.play(currentFrame, Integer.MAX_VALUE);
+                    }else{
+                        // Play Music
+                        advancedPlayer.play();
+                    }
 
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -95,5 +110,10 @@ public class MusicPlayer extends PlaybackListener {
     @Override
     public void playbackFinished(PlaybackEvent evt) {
         System.out.println("Playback Finished");
+
+        if (isPaused){
+            currentFrame += (int) ((double) evt.getFrame() * currentSong.getFrameRatePerMilliseconds());
+        }
+
     }
 }
