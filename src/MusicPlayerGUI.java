@@ -50,7 +50,7 @@ public class MusicPlayerGUI extends JFrame {
         jFileChooser = new JFileChooser();
 
         // Set default path for file explorer
-        jFileChooser.setCurrentDirectory(new File("src/assets"));
+        jFileChooser.setCurrentDirectory(new File("src/songs"));
 
         // Filter to only see mp3 file
         jFileChooser.setFileFilter(new FileNameExtensionFilter("MP3", "mp3"));
@@ -65,7 +65,7 @@ public class MusicPlayerGUI extends JFrame {
         addToolbar();
 
         // Load music image
-        songImage = new JLabel(loadImage("src/assets/pngegg.png"));
+        songImage = new JLabel(loadImage("src/assets/record.png"));
         songImage.setBounds(0, 50, getWidth()-10, 225);
         add(songImage);
 
