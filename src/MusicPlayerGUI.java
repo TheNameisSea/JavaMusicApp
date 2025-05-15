@@ -1,14 +1,26 @@
 import javax.imageio.ImageIO;
 import javax.swing.*;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.FilenameFilter;
 
 public class MusicPlayerGUI extends JFrame {
 
     // Color constant
     public static final Color FRAME_COLOR = Color.BLACK;
     public static final Color TEXT_COLOR = Color.WHITE;
+
+    private MusicPlayer musicPlayer;
+
+    // Allow file explorer
+    private JFileChooser jFileChooser;
+
+    private JLabel songTitle, songArtist;
+    private JPanel playbackBtns;
 
 
 
@@ -33,6 +45,15 @@ public class MusicPlayerGUI extends JFrame {
         // Change color
         getContentPane().setBackground(FRAME_COLOR);
 
+        musicPlayer = new MusicPlayer();
+        jFileChooser = new JFileChooser();
+
+        // Set default path for file explorer
+        jFileChooser.setCurrentDirectory(new File("src/assets"));
+
+        // Filter to only see mp3 file
+        jFileChooser.setFileFilter(new FileNameExtensionFilter("MP3", "mp3"));
+
 
         addGuiComponents();
 
@@ -48,7 +69,7 @@ public class MusicPlayerGUI extends JFrame {
         add(songImage);
 
         // Music title
-        JLabel songTitle = new JLabel("Song Title");
+        songTitle = new JLabel("Song Title");
         songTitle.setBounds(0, 285, getWidth()-10, 30);
         songTitle.setFont(new Font("Dialog", Font.BOLD, 24));
         songTitle.setForeground(TEXT_COLOR);
@@ -56,7 +77,7 @@ public class MusicPlayerGUI extends JFrame {
         add(songTitle);
 
         // Music artist
-        JLabel songArtist = new JLabel("by Artist");
+        songArtist = new JLabel("by Artist");
         songArtist.setBounds(0, 315, getWidth()-10, 30);
         songArtist.setFont(new Font("Dialog", Font.PLAIN, 24));
         songArtist.setForeground(TEXT_COLOR);
@@ -92,6 +113,31 @@ public class MusicPlayerGUI extends JFrame {
 
         // Add option to load song
         JMenuItem loadSong = new JMenuItem("Load Song");
+        loadSong.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+
+                // int is to check if user has open the song or just selected it
+                int result = jFileChooser.showOpenDialog(MusicPlayerGUI.this);
+                File selectedFile = jFileChooser.getSelectedFile();
+
+                if (result == JFileChooser.APPROVE_OPTION && selectedFile!=null){
+                    // Create a song obj
+                    Song song = new Song(selectedFile.getPath());
+
+                    // Load song
+                    musicPlayer.loadSong(song);
+
+                    // Update song metadata
+                    updateSongTitleAndArtist(song);
+
+                    // Toggle Play Pause button
+                    enablePauseButtonDisablePlayButton();
+
+                }
+
+            }
+        });
         songMenu.add(loadSong);
 
         // Add playlist menu
@@ -111,7 +157,7 @@ public class MusicPlayerGUI extends JFrame {
     }
 
     private void addPlaybackBtns(){
-        JPanel playbackBtns = new JPanel();
+        playbackBtns = new JPanel();
         playbackBtns.setBounds(0, 435, getWidth()-10, 80);
         playbackBtns.setBackground(null);
 
@@ -132,6 +178,13 @@ public class MusicPlayerGUI extends JFrame {
         pauseButton.setBorderPainted(false);
         pauseButton.setBackground(null);
         pauseButton.setVisible(false);
+        pauseButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                enablePlayButtonDisablePauseButton();
+                musicPlayer.pauseSong();
+            }
+        });
         playbackBtns.add(pauseButton);
 
         // Next button
@@ -141,6 +194,45 @@ public class MusicPlayerGUI extends JFrame {
         playbackBtns.add(nextButton);
 
         add(playbackBtns);
+    }
+
+    private void updateSongTitleAndArtist(Song song){
+        songTitle.setText(song.getSongTitle());
+        songArtist.setText(song.getSongArtist());
+    }
+
+    private void enablePauseButtonDisablePlayButton(){
+
+        // Get component at index 1/2 of Jbutton (play / pause)
+        JButton playButton = (JButton) playbackBtns.getComponent(1);
+        JButton pauseButton = (JButton) playbackBtns.getComponent(2);
+
+        // Turn off play
+        playButton.setVisible(false);
+        playButton.setEnabled(false);
+
+        // Turn on pause
+        pauseButton.setVisible(true);
+        pauseButton.setEnabled(true);
+
+
+    }
+
+    private void enablePlayButtonDisablePauseButton(){
+
+        // Get component at index 1/2 of Jbutton (play / pause)
+        JButton playButton = (JButton) playbackBtns.getComponent(1);
+        JButton pauseButton = (JButton) playbackBtns.getComponent(2);
+
+        // Turn off pause
+        pauseButton.setVisible(false);
+        pauseButton.setEnabled(false);
+
+        // Turn on play
+        playButton.setVisible(true);
+        playButton.setEnabled(true);
+
+
     }
 
     private ImageIcon loadImage(String imagePath){
