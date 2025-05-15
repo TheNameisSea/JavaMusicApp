@@ -34,6 +34,7 @@ public class MusicPlayer extends PlaybackListener {
         }
 
         currentSong = song;
+        currentFrame = 0;
 
         // Play song
         if (currentSong != null){
