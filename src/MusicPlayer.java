@@ -8,8 +8,15 @@ import java.io.FileInputStream;
 
 public class MusicPlayer extends PlaybackListener {
 
+    private static final Object playSignal = new Object();
+
+    private MusicPlayerGUI musicPlayerGUI;
+
     // Song class to store song details
     private Song currentSong;
+    public Song getCurrentSong(){
+        return currentSong;
+    }
 
     // AdvancedPlayer obj to handle music
     private AdvancedPlayer advancedPlayer;
@@ -19,10 +26,19 @@ public class MusicPlayer extends PlaybackListener {
 
     // Current frame
     private int currentFrame;
+    public void setCurrentFrame(int frame){
+        currentFrame = frame;
+    }
+
+    // Track time passed
+    private int currentTimeInMilli;
+    public void setCurrentTimeInMilli(int timeInMilli){
+        currentTimeInMilli = timeInMilli;
+    }
 
     // Constructor
-    public MusicPlayer(){
-
+    public MusicPlayer(MusicPlayerGUI musicPlayerGUI){
+        this.musicPlayerGUI = musicPlayerGUI;
     }
 
     public void loadSong(Song song){
@@ -75,6 +91,9 @@ public class MusicPlayer extends PlaybackListener {
             // Play
             startMusicThread();
 
+            // Start playback slider
+            startPlaybackSliderThread();
+
         } catch (Exception e){
             e.printStackTrace();
         }
@@ -89,6 +108,10 @@ public class MusicPlayer extends PlaybackListener {
             public void run() {
                 try {
                     if (isPaused){
+                        synchronized (playSignal){
+                            isPaused = false;
+                            playSignal.notify();
+                        }
                         advancedPlayer.play(currentFrame, Integer.MAX_VALUE);
                     }else{
                         // Play Music
@@ -100,7 +123,39 @@ public class MusicPlayer extends PlaybackListener {
                 }
             }
         }).start();
+    }
 
+    // Create a thread that will handle updating the slider
+    private void startPlaybackSliderThread(){
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                if (isPaused){
+                    try{
+                        synchronized (playSignal){
+                            playSignal.wait();
+                        }
+                    } catch (Exception e){
+                        e.printStackTrace();
+                    }
+                }
+
+                while(!isPaused){
+                    try {
+                        currentTimeInMilli++;
+
+                        // Calculate frame
+                        int calculatedFrame = (int) ((double) currentTimeInMilli * 2.08 * currentSong.getFrameRatePerMilliseconds());
+
+                        // Update GUI
+                        musicPlayerGUI.setPlaybackSliderValue(calculatedFrame);
+                        Thread.sleep(1);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }).start();
     }
 
     @Override

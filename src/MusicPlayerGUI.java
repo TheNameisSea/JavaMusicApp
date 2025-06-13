@@ -4,9 +4,13 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FilenameFilter;
+import java.util.Hashtable;
 
 public class MusicPlayerGUI extends JFrame {
 
@@ -22,6 +26,8 @@ public class MusicPlayerGUI extends JFrame {
     private JLabel songTitle, songArtist;
     private JLabel songImage;
     private JPanel playbackBtns;
+
+    private JSlider playbackSlider;
 
 
 
@@ -46,7 +52,7 @@ public class MusicPlayerGUI extends JFrame {
         // Change color
         getContentPane().setBackground(FRAME_COLOR);
 
-        musicPlayer = new MusicPlayer();
+        musicPlayer = new MusicPlayer(this);
         jFileChooser = new JFileChooser();
 
         // Set default path for file explorer
@@ -65,7 +71,7 @@ public class MusicPlayerGUI extends JFrame {
         addToolbar();
 
         // Load music image
-        songImage = new JLabel(loadImage("src/assets/pngegg.png"));
+        songImage = new JLabel(loadImage("src/assets/record.png"));
         songImage.setBounds(0, 50, getWidth()-10, 225);
         add(songImage);
 
@@ -86,9 +92,39 @@ public class MusicPlayerGUI extends JFrame {
         add(songArtist);
 
         // Playback slider
-        JSlider playbackSlider = new JSlider(JSlider.HORIZONTAL, 0, 100, 0);
+        playbackSlider = new JSlider(JSlider.HORIZONTAL, 0, 100, 0);
         playbackSlider.setBounds(getWidth()/2 - 300/2, 365, 300, 40);
         playbackSlider.setBackground(null);
+        playbackSlider.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                // Pause song when slider is pressed
+                musicPlayer.pauseSong();
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                // When the slider is released
+                JSlider source = (JSlider) e.getSource();
+
+                // Get frame value to play
+                int frame =  source.getValue();
+
+                // Update current frame
+                musicPlayer.setCurrentFrame(frame);
+
+                // Update current time
+                musicPlayer.setCurrentTimeInMilli(
+                    (int) (frame / (2.08 * musicPlayer.getCurrentSong().getFrameRatePerMilliseconds()))
+                );
+
+                // Resume song
+                musicPlayer.playCurrentSong();
+
+                // Toggle play pause button
+                enablePauseButtonDisablePlayButton();
+            }
+        });
         add(playbackSlider);
 
         // Playback buttons
@@ -131,6 +167,9 @@ public class MusicPlayerGUI extends JFrame {
 
                     // Update song metadata
                     updateSongTitleAndArtist(song);
+
+                    // Update playback slider
+                    updatePlaybackSlider(song);
 
                     // Update image
                     updateCoverImage(song);
@@ -207,9 +246,38 @@ public class MusicPlayerGUI extends JFrame {
         add(playbackBtns);
     }
 
+    public void setPlaybackSliderValue(int frame){
+        playbackSlider.setValue(frame);
+    }
+
     private void updateSongTitleAndArtist(Song song){
         songTitle.setText(song.getSongTitle());
         songArtist.setText(song.getSongArtist());
+    }
+
+    private void updatePlaybackSlider(Song song){
+        // Update max count for slider
+        playbackSlider.setMaximum(song.getMp3File().getFrameCount());
+
+        // Create song length label
+        Hashtable<Integer, JLabel> labelTable = new Hashtable<>();
+
+        // Song beginning
+        JLabel labelBeginning = new JLabel("00:00");
+        labelBeginning.setFont(new Font("Dialog", Font.BOLD, 18));
+        labelBeginning.setForeground(TEXT_COLOR);
+
+        // Song ending
+        JLabel labelEnd = new JLabel(song.getSongLength());
+        labelEnd.setFont(new Font("Dialog", Font.BOLD, 18));
+        labelEnd.setForeground(TEXT_COLOR);
+
+        labelTable.put(0, labelBeginning);
+        labelTable.put(song.getMp3File().getFrameCount(), labelEnd);
+
+        playbackSlider.setLabelTable(labelTable);
+        playbackSlider.setPaintLabels(true);
+
     }
 
     private void updateCoverImage(Song song){
@@ -217,6 +285,9 @@ public class MusicPlayerGUI extends JFrame {
         if (cover != null) {
             Image scaledImage = cover.getScaledInstance(225, 225, Image.SCALE_SMOOTH);
             songImage.setIcon(new ImageIcon(scaledImage));
+        }
+        else{
+            songImage = new JLabel(loadImage("src/assets/record.png"));
         }
     }
 
