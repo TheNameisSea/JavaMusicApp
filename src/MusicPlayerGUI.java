@@ -7,9 +7,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.FilenameFilter;
 import java.util.Hashtable;
 
 public class MusicPlayerGUI extends JFrame {
@@ -162,14 +160,15 @@ public class MusicPlayerGUI extends JFrame {
                     // Create a song obj
                     Song song = new Song(selectedFile.getPath());
 
+                    // Update playback slider
+                    updatePlaybackSlider(song);
+
                     // Load song
                     musicPlayer.loadSong(song);
 
                     // Update song metadata
                     updateSongTitleAndArtist(song);
 
-                    // Update playback slider
-                    updatePlaybackSlider(song);
 
                     // Update image
                     updateCoverImage(song);
@@ -184,13 +183,40 @@ public class MusicPlayerGUI extends JFrame {
         songMenu.add(loadSong);
 
         // Add playlist menu
-        JMenu playlistMenu = new JMenu("Playlist");
+        JMenu playlistMenu = new JMenu("playlist");
         menuBar.add(playlistMenu);
 
+        // Add new playlist
         JMenuItem createPlaylist = new JMenuItem("Create Playlist");
+        createPlaylist.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                // load music playlist dialog
+                new MusicPlaylistDialog(MusicPlayerGUI.this).setVisible(true);
+            }
+        });
         playlistMenu.add(createPlaylist);
 
         JMenuItem loadPlaylist = new JMenuItem("Load Playlist");
+        loadPlaylist.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                JFileChooser jFileChooser = new JFileChooser();
+                jFileChooser.setFileFilter(new FileNameExtensionFilter("playlist", "txt"));
+                jFileChooser.setCurrentDirectory(new File("src/playlist"));
+
+                int result = jFileChooser.showOpenDialog(MusicPlayerGUI.this);
+                File selectedFile = jFileChooser.getSelectedFile();
+
+                if(result == JFileChooser.APPROVE_OPTION && selectedFile != null){
+                    // stop the music
+                    musicPlayer.stopSong();
+
+                    // load playlist
+                    musicPlayer.loadPlaylist(selectedFile);
+                }
+            }
+        });
         playlistMenu.add(loadPlaylist);
 
         add(toolBar);
@@ -208,6 +234,13 @@ public class MusicPlayerGUI extends JFrame {
         JButton prevButton = new JButton(loadImage("src/assets/previous.png"));
         prevButton.setBorderPainted(false);
         prevButton.setBackground(null);
+        prevButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                // go to the previous song
+                musicPlayer.prevSong();
+            }
+        });
         playbackBtns.add(prevButton);
 
         // Play button
@@ -241,9 +274,24 @@ public class MusicPlayerGUI extends JFrame {
         JButton nextButton = new JButton(loadImage("src/assets/next.png"));
         nextButton.setBorderPainted(false);
         nextButton.setBackground(null);
+        nextButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                // go to the next song
+                musicPlayer.nextSong();
+            }
+        });
         playbackBtns.add(nextButton);
 
         add(playbackBtns);
+    }
+
+    public void updateGUI(Song song){
+        setPlaybackSliderValue(0);
+        updateSongTitleAndArtist(song);
+        updateCoverImage(song);
+        updatePlaybackSlider(song);
+        enablePauseButtonDisablePlayButton();
     }
 
     public void setPlaybackSliderValue(int frame){
@@ -287,7 +335,8 @@ public class MusicPlayerGUI extends JFrame {
             songImage.setIcon(new ImageIcon(scaledImage));
         }
         else{
-            songImage = new JLabel(loadImage("src/assets/record.png"));
+            ImageIcon image = loadImage("src/assets/record.png");
+            songImage.setIcon(image);
         }
     }
 
@@ -310,7 +359,7 @@ public class MusicPlayerGUI extends JFrame {
 
     }
 
-    private void enablePlayButtonDisablePauseButton(){
+    public void enablePlayButtonDisablePauseButton(){
 
         // Get component at index 1/2 of Jbutton (play / pause)
         JButton playButton = (JButton) playbackBtns.getComponent(1);
