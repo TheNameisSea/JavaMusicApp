@@ -94,4 +94,9 @@ public class Song {
         return frameRatePerMilliseconds;
     }
 
+
+    public String toString(){
+        return this.songTitle;
+    }
+
 }
