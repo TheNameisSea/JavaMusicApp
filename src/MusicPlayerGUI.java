@@ -19,6 +19,8 @@ public class MusicPlayerGUI extends JFrame {
 
     private MusicPlayer musicPlayer;
 
+    private MusicLibraryWindow musicLibraryWindow;
+
     // Allow file explorer
     private JFileChooser jFileChooser;
 
@@ -50,10 +52,12 @@ public class MusicPlayerGUI extends JFrame {
         getContentPane().setBackground(FRAME_COLOR);
 
         musicPlayer = new MusicPlayer(this);
+        musicLibraryWindow = new MusicLibraryWindow(this, musicPlayer);
+
         jFileChooser = new JFileChooser();
 
         // Set default path for file explorer
-        jFileChooser.setCurrentDirectory(new File("src/songs"));
+        jFileChooser.setCurrentDirectory(new File("src/Library"));
 
         // Filter to only see mp3 file
         jFileChooser.setFileFilter(new FileNameExtensionFilter("MP3", "mp3"));
@@ -190,16 +194,12 @@ public class MusicPlayerGUI extends JFrame {
 
         openLibrary.addActionListener(e -> {
             // For now, assume the library is a list containing just the current song
-            ArrayList<Song> library = new ArrayList<>();
-            if (musicPlayer.getCurrentSong() != null) {
-                library.add(musicPlayer.getCurrentSong());
-            }
-            new MusicLibraryWindow(this, musicPlayer, library);
+            musicLibraryWindow.setVisible(true);
         });
         libraryMenu.add(openLibrary);
 
         // Add playlist menu
-        JMenu playlistMenu = new JMenu("playlist");
+        JMenu playlistMenu = new JMenu("Playlist");
         menuBar.add(playlistMenu);
 
         // Add new playlist

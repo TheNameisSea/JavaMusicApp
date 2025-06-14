@@ -11,12 +11,12 @@ import java.util.ArrayList;
 public class MusicPlaylistDialog extends JDialog {
     private MusicPlayerGUI musicPlayerGUI;
 
-    // store all of the paths to be written to a txt file (when we load a playlist)
-    private ArrayList<String> songPaths;
+    // store all of the song's name to be written to a txt file (when we load a playlist)
+    private ArrayList<String> songNames;
 
     public MusicPlaylistDialog(MusicPlayerGUI musicPlayerGUI){
         this.musicPlayerGUI = musicPlayerGUI;
-        songPaths = new ArrayList<>();
+        songNames = new ArrayList<>();
 
 
         // configure dialog
@@ -48,17 +48,26 @@ public class MusicPlaylistDialog extends JDialog {
                 // open file explorer
                 JFileChooser jFileChooser = new JFileChooser();
                 jFileChooser.setFileFilter(new FileNameExtensionFilter("MP3", "mp3"));
-                jFileChooser.setCurrentDirectory(new File("src/songs"));
+                jFileChooser.setCurrentDirectory(new File("src/Library"));
                 int result = jFileChooser.showOpenDialog(MusicPlaylistDialog.this);
 
                 File selectedFile = jFileChooser.getSelectedFile();
                 if(result == JFileChooser.APPROVE_OPTION && selectedFile != null){
-                    JLabel filePathLabel = new JLabel(selectedFile.getPath());
-                    filePathLabel.setFont(new Font("Dialog", Font.BOLD, 12));
-                    filePathLabel.setBorder(BorderFactory.createLineBorder(Color.BLACK));
+                    String name = selectedFile.getName().replace(".mp3", "");
+                    Song song = new Song(selectedFile.getPath());
+                    JLabel filePathLabel = new JLabel(name);
+                    filePathLabel.setFont(new Font("Dialog", Font.BOLD, 15));
+                    filePathLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+                    filePathLabel.setMaximumSize(new Dimension(songContainer.getWidth(), 40));
+                    filePathLabel.setVerticalAlignment(SwingConstants.CENTER);
+                    filePathLabel.setBorder(BorderFactory.createCompoundBorder(
+                            BorderFactory.createMatteBorder(0, 0, 1, 0, Color.BLACK), // underline only
+                            BorderFactory.createEmptyBorder(5, 10, 5, 10) // inner padding
+                    ));
 
                     // add to the list
-                    songPaths.add(filePathLabel.getText());
+
+                    songNames.add(song.getSongTitle());
 
                     // add to container
                     songContainer.add(filePathLabel);
@@ -79,7 +88,7 @@ public class MusicPlaylistDialog extends JDialog {
             public void actionPerformed(ActionEvent e) {
                 try{
                     JFileChooser jFileChooser = new JFileChooser();
-                    jFileChooser.setCurrentDirectory(new File("src/assets"));
+                    jFileChooser.setCurrentDirectory(new File("src/playlist"));
                     int result = jFileChooser.showSaveDialog(MusicPlaylistDialog.this);
 
                     if(result == JFileChooser.APPROVE_OPTION){
@@ -101,7 +110,7 @@ public class MusicPlaylistDialog extends JDialog {
 
                         // iterate through our song paths list and write each string into the file
                         // each song will be written in their own row
-                        for(String songPath : songPaths){
+                        for(String songPath : songNames){
                             bufferedWriter.write(songPath + "\n");
                         }
                         bufferedWriter.close();

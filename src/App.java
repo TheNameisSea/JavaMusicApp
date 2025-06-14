@@ -9,7 +9,6 @@ public class App {
             @Override
             public void run() {
                 new MusicPlayerGUI().setVisible(true);
-                MusicLibrary musicLibrary = new MusicLibrary();
 
 //                Song song = new Song("src/assets/Tetoris-_-テトリス-_-重音テトSV.mp3");
 //                System.out.println(song.getSongTitle());

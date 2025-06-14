@@ -25,7 +25,6 @@ class ClosestTracker {
 
 class Node {
     Song key;
-    File path;
     int height;
     Node left, right;
 
@@ -134,7 +133,7 @@ public class SongTree implements Comparator<Song> {
 
         if (compare(key, root.key) < 0)
             root.left = insert(root.left, key);
-        else if (compare(key, root.key) > 0)
+        else if (compare(key, root.key) >= 0)
             root.right = insert(root.right, key);
         else
             return root;
@@ -150,11 +149,11 @@ public class SongTree implements Comparator<Song> {
             return rightRotate(root);
 
         // Right Right Case
-        if (balance < -1 && compare(key, root.right.key) > 0)
+        if (balance < -1 && compare(key, root.right.key) >= 0)
             return leftRotate(root);
 
         // Left Right Case
-        if (balance > 1 && compare(key, root.left.key) > 0) {
+        if (balance > 1 && compare(key, root.left.key) >= 0) {
             root.left = leftRotate(root.left);
             return rightRotate(root);
         }
@@ -269,7 +268,7 @@ public class SongTree implements Comparator<Song> {
         if (compare(query, root.key) < 0) {
             tracker.succ = root;
             findClosest(root.left, query, tracker);
-        } else if (compare(query, root.key) > 0) {
+        } else if (compare(query, root.key) >= 0) {
             tracker.pred = root;
             findClosest(root.right, query, tracker);
         } else {
@@ -279,11 +278,11 @@ public class SongTree implements Comparator<Song> {
     }
 
     // Search the k nearest lexicographical song compared to the query
-    public void searchNearestLexico(String query, int k){
+    public ArrayList<Song> searchNearestLexico(String query, int k){
         ClosestTracker tracker = new ClosestTracker();
         findClosest(root, query, tracker);
 
-        List<Song> result = new ArrayList<>();
+        ArrayList<Song> result = new ArrayList<>();
         if (tracker.pred != null) result.add(tracker.pred.key);
         if (tracker.succ != null) result.add(tracker.succ.key);
 
@@ -302,7 +301,7 @@ public class SongTree implements Comparator<Song> {
             }
         }
 
-        System.out.println(result);
+        return result;
     }
 
     Node getPredecessor(Node root, String key) {
@@ -394,7 +393,7 @@ public class SongTree implements Comparator<Song> {
     }
 
     // Search the k closest song compared to the query
-    public ArrayList<Song> getClosestSongs(String query, int k){
+    public ArrayList<Song> searchClosestSongs(String query, int k){
         PriorityQueue<SongMatch> pq = new PriorityQueue<>();
         collectMatches(root, query, pq);
 

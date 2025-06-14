@@ -3,6 +3,7 @@ import javazoom.jl.player.advanced.PlaybackEvent;
 import javazoom.jl.player.advanced.PlaybackListener;
 
 import java.io.*;
+import java.util.HashMap;
 import java.util.LinkedList;
 
 public class MusicPlayer extends PlaybackListener {
@@ -84,20 +85,22 @@ public class MusicPlayer extends PlaybackListener {
 
     public void loadPlaylist(File playlistFile){
         playlist = new LinkedList<>();
-
+        HashMap<String, String> songMap = MusicLibraryWindow.songMap;
         // store the paths from the text file into the playlist array list
         try{
             FileReader fileReader = new FileReader(playlistFile);
             BufferedReader bufferedReader = new BufferedReader(fileReader);
 
             // reach each line from the text file and store the text into the songPath variable
-            String songPath;
-            while((songPath = bufferedReader.readLine()) != null){
-                // create song object based on song path
-                Song song = new Song(songPath);
+            String songName;
 
-                // add to playlist array list
-                playlist.add(song);
+            while((songName = bufferedReader.readLine()) != null){
+                // create song object based on song path
+                if (songMap.containsKey(songName)){
+                    Song song = new Song(songMap.get(songName));
+                    // add to playlist linked list
+                    playlist.add(song);
+                }
             }
         }catch(Exception e){
             e.printStackTrace();
@@ -278,7 +281,6 @@ public class MusicPlayer extends PlaybackListener {
 
                         // Calculate frame
                         int calculatedFrame = (int) ((double) currentTimeInMilli * 2.08 * currentSong.getFrameRatePerMilliseconds());
-                        System.out.println(calculatedFrame);
 
                         // Update GUI
                         musicPlayerGUI.setPlaybackSliderValue(calculatedFrame);
