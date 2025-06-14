@@ -146,6 +146,7 @@ public class MusicPlayer extends PlaybackListener {
 
                         // Calculate frame
                         int calculatedFrame = (int) ((double) currentTimeInMilli * 2.08 * currentSong.getFrameRatePerMilliseconds());
+                        System.out.println(calculatedFrame);
 
                         // Update GUI
                         musicPlayerGUI.setPlaybackSliderValue(calculatedFrame);

@@ -11,6 +11,7 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.util.Hashtable;
+import java.util.ArrayList;
 
 public class MusicPlayerGUI extends JFrame {
 
@@ -28,8 +29,6 @@ public class MusicPlayerGUI extends JFrame {
     private JPanel playbackBtns;
 
     private JSlider playbackSlider;
-
-
 
     public MusicPlayerGUI(){
         // Use JFrame constructor to configure the GUI
@@ -172,6 +171,7 @@ public class MusicPlayerGUI extends JFrame {
                     updatePlaybackSlider(song);
 
                     // Update image
+
                     updateCoverImage(song);
 
                     // Toggle Play Pause button
@@ -182,6 +182,22 @@ public class MusicPlayerGUI extends JFrame {
             }
         });
         songMenu.add(loadSong);
+
+        // Add library menu
+        JMenu libraryMenu = new JMenu("Library");
+        menuBar.add(libraryMenu);
+
+        JMenuItem openLibrary = new JMenuItem("Open Library");
+
+        openLibrary.addActionListener(e -> {
+            // For now, assume the library is a list containing just the current song
+            ArrayList<Song> library = new ArrayList<>();
+            if (musicPlayer.getCurrentSong() != null) {
+                library.add(musicPlayer.getCurrentSong());
+            }
+            new MusicLibraryWindow(this, musicPlayer, library);
+        });
+        libraryMenu.add(openLibrary);
 
         // Add playlist menu
         JMenu playlistMenu = new JMenu("Playlist");
@@ -250,12 +266,12 @@ public class MusicPlayerGUI extends JFrame {
         playbackSlider.setValue(frame);
     }
 
-    private void updateSongTitleAndArtist(Song song){
+    public void updateSongTitleAndArtist(Song song){
         songTitle.setText(song.getSongTitle());
         songArtist.setText(song.getSongArtist());
     }
 
-    private void updatePlaybackSlider(Song song){
+    public void updatePlaybackSlider(Song song){
         // Update max count for slider
         playbackSlider.setMaximum(song.getMp3File().getFrameCount());
 
@@ -280,20 +296,19 @@ public class MusicPlayerGUI extends JFrame {
 
     }
 
-    private void updateCoverImage(Song song){
+    public void updateCoverImage(Song song){
         BufferedImage cover = song.getCoverImage();
         if (cover != null) {
             Image scaledImage = cover.getScaledInstance(225, 225, Image.SCALE_SMOOTH);
             songImage.setIcon(new ImageIcon(scaledImage));
         }
         else{
-            songImage = new JLabel(loadImage("src/assets/record.png"));
+            ImageIcon image = loadImage("src/assets/record.png");
+            songImage.setIcon(image);
         }
     }
 
-
-
-    private void enablePauseButtonDisablePlayButton(){
+    public void enablePauseButtonDisablePlayButton(){
 
         // Get component at index 1/2 of Jbutton (play / pause)
         JButton playButton = (JButton) playbackBtns.getComponent(1);
