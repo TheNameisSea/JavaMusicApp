@@ -23,6 +23,7 @@ public class MusicLibraryWindow extends JFrame {
     // HashMap to store song title -> file path
     private HashMap<String, String> songMap = new HashMap<>();
     private AVLTree songTree = new AVLTree();
+    private SongTree songTreeNew = new SongTree();
 
     public MusicLibraryWindow(MusicPlayerGUI musicPlayerGUI, MusicPlayer musicPlayer, ArrayList<Song> songList) {
         this.musicPlayerGUI = musicPlayerGUI;
@@ -42,13 +43,19 @@ public class MusicLibraryWindow extends JFrame {
 
         // --- Top Bar (Search + Add) ---
         JPanel topPanel = new JPanel(new BorderLayout());
+        JPanel rightTopPanel = new JPanel(new BorderLayout());
 
         searchBar = new JTextField();
         topPanel.add(searchBar, BorderLayout.CENTER);
 
         JButton searchBtn = new JButton("Search");
+        JButton searchClosestBtn = new JButton("Search Closest");
         searchBtn.addActionListener(e -> performSearch());
-        topPanel.add(searchBtn, BorderLayout.EAST);
+        searchClosestBtn.addActionListener(e -> performClosestSearch());
+        rightTopPanel.add(searchBtn, BorderLayout.NORTH);
+        rightTopPanel.add(searchClosestBtn, BorderLayout.SOUTH);
+        topPanel.add(rightTopPanel, BorderLayout.EAST);
+
 
         JButton addSongBtn = new JButton("＋");
         addSongBtn.setToolTipText("Add Song");
@@ -70,26 +77,41 @@ public class MusicLibraryWindow extends JFrame {
     }
 
     private void loadSongsFromLibraryFolder() {
-        File libraryDir = new File("./Library");
-        if (!libraryDir.exists()) {
-            libraryDir.mkdir();
-        }
+        File libraryDir = new File("./src/Library");
 
-        File[] files = libraryDir.listFiles((dir, name) -> name.toLowerCase().endsWith(".mp3"));
-        if (files == null) return;
+        File[] lists = libraryDir.listFiles((dir, name) -> name.toLowerCase().endsWith(".mp3"));
+
 
         allSongs.clear();
         songMap.clear();
 
-        for (File file : files) {
-            String title = file.getName().replace(".mp3", "");  // strip extension
-            String path = file.getAbsolutePath();
+//        for (File file : files) {
+//            String title = file.getName().replace(".mp3", "");  // strip extension
+//            String path = file.getAbsolutePath();
+//
+//            // Basic Song object (artist unknown here)
+//            Song song = new Song(path);
+//            allSongs.add(song);
+//            songMap.put(title, path);
+//            songTree.insert(title);
+//            songTreeNew.insert(song);
+//        }
 
-            // Basic Song object (artist unknown here)
-            Song song = new Song(path);
-            allSongs.add(song);
-            songMap.put(title, path);
-            songTree.insert(title);
+//        File[] lists = libraryDir.listFiles();
+
+        if (lists != null) {
+            for (File file : lists) {
+                String title = file.getName().replace(".mp3", "");  // strip extension
+                String path = file.getAbsolutePath();
+
+                // Basic Song object (artist unknown here)
+                Song song = new Song(path);
+                allSongs.add(song);
+                songMap.put(title, path);
+                songTree.insert(title);
+                songTreeNew.insert(song);
+
+            }
         }
 
         displayedSongs.clear();
@@ -197,6 +219,24 @@ public class MusicLibraryWindow extends JFrame {
         renderSongList();
     }
 
+    private void performClosestSearch(){
+        String keyword = searchBar.getText();
+        displayedSongs.clear();
+
+        if (keyword.isEmpty()) {
+            displayedSongs.addAll(allSongs);
+        } else {
+            ArrayList<Song> matches = songTreeNew.getClosestSongs(keyword, 3);
+            for (Song song : matches) {
+//                String path = songMap.get(title);
+                displayedSongs.add(song);
+
+            }
+        }
+        renderSongList();
+
+    }
+
     // --- Add Song Function ---
     private void addSongToLibrary() {
         JFileChooser fileChooser = new JFileChooser();
@@ -223,6 +263,7 @@ public class MusicLibraryWindow extends JFrame {
                 displayedSongs.add(newSong);
                 songMap.put(newSong.getSongTitle(), newSong.getFilePath());
                 songTree.insert(newSong.getSongTitle());
+                songTreeNew.insert(newSong);
             }
 
             renderSongList();

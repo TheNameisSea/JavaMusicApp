@@ -394,18 +394,18 @@ public class SongTree implements Comparator<Song> {
     }
 
     // Search the k closest song compared to the query
-    public void getClosestSongs(String query, int k){
+    public ArrayList<Song> getClosestSongs(String query, int k){
         PriorityQueue<SongMatch> pq = new PriorityQueue<>();
         collectMatches(root, query, pq);
 
-        List<Song> result = new ArrayList<>();
+        ArrayList<Song> result = new ArrayList<>();
         int count = 0;
         while (!pq.isEmpty() && count < k) {
             result.add(pq.poll().song);
             count++;
         }
 
-        System.out.println(result);
+        return result;
     }
 
 
