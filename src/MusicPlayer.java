@@ -96,10 +96,11 @@ public class MusicPlayer extends PlaybackListener {
 
             while((songName = bufferedReader.readLine()) != null){
                 // create song object based on song path
-                Song song = new Song(songMap.get(songName));
-
-                // add to playlist linked list
-                playlist.add(song);
+                if (songMap.containsKey(songName)){
+                    Song song = new Song(songMap.get(songName));
+                    // add to playlist linked list
+                    playlist.add(song);
+                }
             }
         }catch(Exception e){
             e.printStackTrace();

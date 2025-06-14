@@ -25,7 +25,6 @@ class ClosestTracker {
 
 class Node {
     Song key;
-    File path;
     int height;
     Node left, right;
 

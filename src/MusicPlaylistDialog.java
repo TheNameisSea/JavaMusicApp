@@ -54,6 +54,7 @@ public class MusicPlaylistDialog extends JDialog {
                 File selectedFile = jFileChooser.getSelectedFile();
                 if(result == JFileChooser.APPROVE_OPTION && selectedFile != null){
                     String name = selectedFile.getName().replace(".mp3", "");
+                    Song song = new Song(selectedFile.getPath());
                     JLabel filePathLabel = new JLabel(name);
                     filePathLabel.setFont(new Font("Dialog", Font.BOLD, 15));
                     filePathLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -66,7 +67,7 @@ public class MusicPlaylistDialog extends JDialog {
 
                     // add to the list
 
-                    songNames.add(filePathLabel.getText());
+                    songNames.add(song.getSongTitle());
 
                     // add to container
                     songContainer.add(filePathLabel);

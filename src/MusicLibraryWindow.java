@@ -106,13 +106,12 @@ public class MusicLibraryWindow extends JFrame {
 
         if (lists != null) {
             for (File file : lists) {
-                String title = file.getName().replace(".mp3", "");  // strip extension
                 String path = file.getAbsolutePath();
 
                 // Basic Song object (artist unknown here)
                 Song song = new Song(path);
                 allSongs.add(song);
-                songMap.put(title, path);
+                songMap.put(song.getSongTitle(), path);
                 songTreeNew.insert(song);
             }
         }
@@ -188,11 +187,12 @@ public class MusicLibraryWindow extends JFrame {
             JButton deleteBtn = new JButton("Delete");
             deleteBtn.addActionListener(e -> {
                 File songFile = new File(song.getFilePath());
-                if (songFile.exists()) songFile.delete();
+//                if (songFile.exists()) songFile.delete();
 
                 allSongs.remove(song);
                 displayedSongs.remove(song);
                 songMap.remove(song.getSongTitle());
+                songTreeNew.delete(song);
                 renderSongList();
             });
             songPanel.add(deleteBtn, BorderLayout.EAST);
