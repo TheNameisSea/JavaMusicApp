@@ -1,0 +1,3 @@
+C:\Users\Nhat Minh\IdeaProjects\JavaMusicApp\src\songs\RABBIT-HOLE-feat-Hatsune-M.mp3
+C:\Users\Nhat Minh\IdeaProjects\JavaMusicApp\src\songs\Tetoris-_-テトリス-_-重音テトSV.mp3
+C:\Users\Nhat Minh\IdeaProjects\JavaMusicApp\src\songs\東方Bad-Apple!!-ＰＶ影絵.mp3
