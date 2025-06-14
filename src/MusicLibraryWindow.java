@@ -12,28 +12,23 @@ import java.util.HashMap;
 
 public class MusicLibraryWindow extends JFrame {
 
-    private MusicPlayerGUI musicPlayerGUI;
+    private final MusicPlayerGUI musicPlayerGUI;
     private JPanel selectedPanel = null;
-    private MusicPlayer musicPlayer;
-    private ArrayList<Song> allSongs;
-    private ArrayList<Song> displayedSongs;
-    private JPanel songListPanel;
-    private JTextField searchBar;
+    private final MusicPlayer musicPlayer;
+    private final ArrayList<Song> allSongs;
+    private final ArrayList<Song> displayedSongs;
+    private final JPanel songListPanel;
+    private final JTextField searchBar;
 
     // HashMap to store song title -> file path
-    private HashMap<String, String> songMap = new HashMap<>();
-    private AVLTree songTree = new AVLTree();
-    private SongTree songTreeNew = new SongTree();
+    public static final HashMap<String, String> songMap = new HashMap<>();
+    private final SongTree songTreeNew = new SongTree();
 
-    public MusicLibraryWindow(MusicPlayerGUI musicPlayerGUI, MusicPlayer musicPlayer, ArrayList<Song> songList) {
+    public MusicLibraryWindow(MusicPlayerGUI musicPlayerGUI, MusicPlayer musicPlayer) {
         this.musicPlayerGUI = musicPlayerGUI;
         this.musicPlayer = musicPlayer;
-        this.allSongs = new ArrayList<>(songList);
-        this.displayedSongs = new ArrayList<>(songList);
-
-        for (Song s : songList) {
-            songMap.put(s.getSongTitle(), s.getFilePath());
-        }
+        this.allSongs = new ArrayList<>();
+        this.displayedSongs = new ArrayList<>();
 
         setTitle("Music Library");
         setSize(450, 600);
@@ -43,24 +38,46 @@ public class MusicLibraryWindow extends JFrame {
 
         // --- Top Bar (Search + Add) ---
         JPanel topPanel = new JPanel(new BorderLayout());
+        JPanel searchFieldPanel = new JPanel(new BorderLayout());
         JPanel rightTopPanel = new JPanel(new BorderLayout());
 
+        // Search Bar
         searchBar = new JTextField();
-        topPanel.add(searchBar, BorderLayout.CENTER);
+        searchBar.addActionListener(e -> performClosestSearch());
+
+        // Button to clear the search bar
+        JButton clearSearchBtn = new JButton("❌");
+        clearSearchBtn.setToolTipText("Clear Search Bar");
+        clearSearchBtn.setMargin(new Insets(0, 5, 0, 5));
+        clearSearchBtn.addActionListener(e -> {
+            searchBar.setText("");
+            displayedSongs.clear();
+            displayedSongs.addAll(allSongs);
+            renderSongList();
+            searchBar.requestFocusInWindow();
+        });
+
+        searchFieldPanel.add(searchBar, BorderLayout.CENTER);
+        searchFieldPanel.add(clearSearchBtn, BorderLayout.EAST);
+
+        topPanel.add(searchFieldPanel, BorderLayout.CENTER);
 
         JButton searchBtn = new JButton("Search");
         JButton searchClosestBtn = new JButton("Search Closest");
         searchBtn.addActionListener(e -> performSearch());
         searchClosestBtn.addActionListener(e -> performClosestSearch());
-        rightTopPanel.add(searchBtn, BorderLayout.NORTH);
-        rightTopPanel.add(searchClosestBtn, BorderLayout.SOUTH);
+        rightTopPanel.add(searchBtn, BorderLayout.SOUTH);
+        rightTopPanel.add(searchClosestBtn, BorderLayout.NORTH);
         topPanel.add(rightTopPanel, BorderLayout.EAST);
 
 
         JButton addSongBtn = new JButton("＋");
         addSongBtn.setToolTipText("Add Song");
+        addSongBtn.setMargin(new Insets(0, 5, 0, 5));
         addSongBtn.addActionListener(e -> addSongToLibrary());
         topPanel.add(addSongBtn, BorderLayout.WEST);
+
+
 
         add(topPanel, BorderLayout.NORTH);
 
@@ -68,10 +85,12 @@ public class MusicLibraryWindow extends JFrame {
         songListPanel = new JPanel();
         songListPanel.setLayout(new BoxLayout(songListPanel, BoxLayout.Y_AXIS));
         JScrollPane scrollPane = new JScrollPane(songListPanel);
+        // Increase vertical scroll speed
+        scrollPane.getVerticalScrollBar().setUnitIncrement(16);
         add(scrollPane, BorderLayout.CENTER);
 
 
-        setVisible(true);
+//        setVisible(true);
         loadSongsFromLibraryFolder();
         renderSongList();
     }
@@ -85,20 +104,6 @@ public class MusicLibraryWindow extends JFrame {
         allSongs.clear();
         songMap.clear();
 
-//        for (File file : files) {
-//            String title = file.getName().replace(".mp3", "");  // strip extension
-//            String path = file.getAbsolutePath();
-//
-//            // Basic Song object (artist unknown here)
-//            Song song = new Song(path);
-//            allSongs.add(song);
-//            songMap.put(title, path);
-//            songTree.insert(title);
-//            songTreeNew.insert(song);
-//        }
-
-//        File[] lists = libraryDir.listFiles();
-
         if (lists != null) {
             for (File file : lists) {
                 String title = file.getName().replace(".mp3", "");  // strip extension
@@ -108,9 +113,7 @@ public class MusicLibraryWindow extends JFrame {
                 Song song = new Song(path);
                 allSongs.add(song);
                 songMap.put(title, path);
-                songTree.insert(title);
                 songTreeNew.insert(song);
-
             }
         }
 
@@ -202,19 +205,14 @@ public class MusicLibraryWindow extends JFrame {
     }
 
     private void performSearch() {
-        String keyword = searchBar.getText().trim().toLowerCase();
+        String keyword = searchBar.getText();
         displayedSongs.clear();
 
         if (keyword.isEmpty()) {
             displayedSongs.addAll(allSongs);
         } else {
-            ArrayList<String> matches = songTree.searchContains(keyword);
-            for (String title : matches) {
-                String path = songMap.get(title);
-                if (path != null) {
-                    displayedSongs.add(new Song(path));
-                }
-            }
+            ArrayList<Song> matches = songTreeNew.searchNearestLexico(keyword, 3);
+            displayedSongs.addAll(matches);
         }
         renderSongList();
     }
@@ -226,12 +224,8 @@ public class MusicLibraryWindow extends JFrame {
         if (keyword.isEmpty()) {
             displayedSongs.addAll(allSongs);
         } else {
-            ArrayList<Song> matches = songTreeNew.getClosestSongs(keyword, 3);
-            for (Song song : matches) {
-//                String path = songMap.get(title);
-                displayedSongs.add(song);
-
-            }
+            ArrayList<Song> matches = songTreeNew.searchClosestSongs(keyword, 3);
+            displayedSongs.addAll(matches);
         }
         renderSongList();
 
@@ -262,7 +256,6 @@ public class MusicLibraryWindow extends JFrame {
                 allSongs.add(newSong);
                 displayedSongs.add(newSong);
                 songMap.put(newSong.getSongTitle(), newSong.getFilePath());
-                songTree.insert(newSong.getSongTitle());
                 songTreeNew.insert(newSong);
             }
 
