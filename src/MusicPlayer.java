@@ -3,19 +3,23 @@ import javazoom.jl.player.advanced.PlaybackEvent;
 import javazoom.jl.player.advanced.PlaybackListener;
 
 import java.io.*;
-import java.util.HashMap;
-import java.util.LinkedList;
+import java.util.*;
 
 public class MusicPlayer extends PlaybackListener {
 
     private static final Object playSignal = new Object();
 
-    private MusicPlayerGUI musicPlayerGUI;
+    public MusicPlayerGUI musicPlayerGUI;
+
+    private Queue<Song> songQueue = new LinkedList<>();
 
     // Song class to store song details
     private Song currentSong;
     public Song getCurrentSong(){
         return currentSong;
+    }
+    public void setCurrentSong(Song song){
+        currentSong = song;
     }
 
     // LinkedList of the Songs in a Playlist
@@ -46,7 +50,7 @@ public class MusicPlayer extends PlaybackListener {
         currentTimeInMilli = timeInMilli;
     }
 
-    private void resetVariable(){
+    public void resetVariable(){
         isPaused = false;
         songFinished = false;
         pressedNext = false;
@@ -79,6 +83,7 @@ public class MusicPlayer extends PlaybackListener {
             resetVariable();
 
             playCurrentSong();
+
         }
 
     }
@@ -160,6 +165,7 @@ public class MusicPlayer extends PlaybackListener {
         // update current song
         currentSong = playlist.get(currentPlaylistIndex);
 
+
         // reset frame
         currentFrame = 0;
 
@@ -173,6 +179,7 @@ public class MusicPlayer extends PlaybackListener {
 
         // play the song
         playCurrentSong();
+
     }
 
     public void prevSong(){
@@ -213,7 +220,7 @@ public class MusicPlayer extends PlaybackListener {
         if (currentSong == null){return;}
 
         try {
-            // Read auido data
+            // Read audio data
             FileInputStream fileInputStream = new FileInputStream(currentSong.getFilePath());
             BufferedInputStream bufferedInputStream = new BufferedInputStream(fileInputStream);
 
@@ -312,21 +319,77 @@ public class MusicPlayer extends PlaybackListener {
 
             songFinished = true;
 
-            if(playlist == null){
+            // Check if we need to play the next song in queue
+//            if (!songQueue.isEmpty()) {
+//                currentSong = songQueue.poll();
+//                playCurrentSong();
+//            } else if (playlist != null && currentPlaylistIndex + 1 < playlist.size()) {
+//                currentPlaylistIndex++;
+//                currentSong = playlist.get(currentPlaylistIndex);
+//                playCurrentSong();
+//            }
+
+            if (!songQueue.isEmpty()) {
+                currentSong = songQueue.poll();
+
+                currentFrame = 0;
+                currentTimeInMilli = 0;
+                musicPlayerGUI.updateGUI(currentSong);
+                musicPlayerGUI.setPlaybackSliderValue(0);
+                musicPlayerGUI.updatePlaybackSlider(currentSong);
+                musicPlayerGUI.enablePauseButtonDisablePlayButton();
+
+                playCurrentSong();
+                startMusicThread();
+                startPlaybackSliderThread();
+
+            } else if (playlist == null) {
+                return;
+            } else if (currentPlaylistIndex == playlist.size() - 1) {
                 // update gui
                 musicPlayerGUI.enablePlayButtonDisablePauseButton();
-            }else{
-                // last song in the playlist
-                if(currentPlaylistIndex == playlist.size() - 1){
-                    // update gui
-                    musicPlayerGUI.enablePlayButtonDisablePauseButton();
-                }else{
-                    // go to the next song in the playlist
-                    nextSong();
-                }
+            } else {
+                nextSong();
             }
+
+//            if(playlist == null){
+//                // update gui
+//                musicPlayerGUI.enablePlayButtonDisablePauseButton();
+//            }else{
+//                // last song in the playlist
+//                if(currentPlaylistIndex == playlist.size() - 1){
+//                    // update gui
+//                    musicPlayerGUI.enablePlayButtonDisablePauseButton();
+//                }else{
+//                    // go to the next song in the playlist
+//                    nextSong();
+//                }
+//            }
         }
 
+    }
+
+    public LinkedList<Song> getPlaylist() {
+        return playlist;
+    }
+
+    public void addToQueue(Song song) {
+        songQueue.add(song);
+    }
+
+    public void removeFromQueue(Song song) {
+        songQueue.remove(song);
+    }
+
+    public List<Song> getQueue() {
+        return new ArrayList<>(songQueue); // for viewing in UI
+    }
+
+    public void moveSongInQueue(int fromIndex, int toIndex) {
+        List<Song> tempList = new ArrayList<>(songQueue);
+        Song song = tempList.remove(fromIndex);
+        tempList.add(toIndex, song);
+        songQueue = new LinkedList<>(tempList);
     }
 
 }

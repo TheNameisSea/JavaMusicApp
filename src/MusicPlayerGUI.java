@@ -39,9 +39,6 @@ public class MusicPlayerGUI extends JFrame {
         // Set w and h
         setSize(400, 600);
 
-        // End process if app is closed
-//        setDefaultCloseOperation(EXIT_ON_CLOSE);
-
         // Launch app at screen center
         setLocationRelativeTo(null);
 

@@ -10,10 +10,12 @@ import java.io.*;
 import java.nio.file.*;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 
 public class MusicLibraryWindow extends JFrame {
 
     private final MusicPlayerGUI musicPlayerGUI;
+    private QueueViewerWindow queueViewerWindow;
     private JPanel selectedPanel = null;
     private final MusicPlayer musicPlayer;
     private final ArrayList<Song> allSongs;
@@ -57,19 +59,39 @@ public class MusicLibraryWindow extends JFrame {
         menuBar.add(songMenu);
         JMenuItem loadSong = new JMenuItem("Add Song");
 
-//        JButton addSongBtn = new JButton("＋");
-//        addSongBtn.setToolTipText("Add Song");
-//        addSongBtn.setMargin(new Insets(0, 5, 0, 5));
         loadSong.addActionListener(e -> addSongToLibrary());
         songMenu.add(loadSong);
+
+        JMenu queueMenu = new JMenu("Queue");
+        menuBar.add(queueMenu);
+        JMenuItem viewQueue = new JMenuItem("View Queue");
+        viewQueue.addActionListener(e -> showQueueViewer());
+        queueMenu.add(viewQueue);
+
 
         // Add playlist menu
         JMenu playlistMenu = new JMenu("Playlist");
         menuBar.add(playlistMenu);
 
         // Add current playlist
-        JMenuItem currentPlaylist = new JMenuItem("Current Playlist");
+        JMenuItem currentPlaylist = new JMenuItem("View Current Playlist");
         playlistMenu.add(currentPlaylist);
+        currentPlaylist.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                LinkedList<Song> playlist = musicPlayer.getPlaylist();
+
+                if (playlist == null || playlist.isEmpty()) {
+                    JOptionPane.showMessageDialog(MusicLibraryWindow.this,
+                            "No playlist loaded.", "Warning", JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+
+                String playlistName = "Loaded Playlist";
+
+                new PlaylistViewerWindow(playlistName, playlist, musicPlayer, musicPlayerGUI).setVisible(true);
+            }
+        });
 
         // Add new playlist
         JMenuItem createPlaylist = new JMenuItem("Create Playlist");
@@ -100,8 +122,11 @@ public class MusicLibraryWindow extends JFrame {
                     // load playlist
                     musicPlayer.loadPlaylist(selectedFile);
                 }
+                LinkedList<Song> playlist = musicPlayer.getPlaylist();
+                new PlaylistViewerWindow("My Playlist", playlist, musicPlayerGUI.musicPlayer, musicPlayerGUI);
             }
         });
+
         playlistMenu.add(loadPlaylist);
 
         topPanel.add(toolBar, BorderLayout.NORTH);
@@ -127,11 +152,9 @@ public class MusicLibraryWindow extends JFrame {
 
         topPanel.add(searchFieldPanel, BorderLayout.CENTER);
 
-//        JButton searchBtn = new JButton("Search Exact");
+        // Search mechanism
         JButton searchClosestBtn = new JButton("Search");
-//        searchBtn.addActionListener(e -> performSearch());
         searchClosestBtn.addActionListener(e -> performClosestSearch());
-//        rightTopPanel.add(searchBtn, BorderLayout.SOUTH);
         rightTopPanel.add(searchClosestBtn, BorderLayout.NORTH);
         topPanel.add(rightTopPanel, BorderLayout.EAST);
 
@@ -140,7 +163,6 @@ public class MusicLibraryWindow extends JFrame {
 
         // Sort panel above the songs
         JPanel sortPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-//        sortPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 0, 10));
         sortPanel.setBackground(Color.WHITE);
 
         JLabel sortLabel = new JLabel("Sort:");
@@ -206,13 +228,18 @@ public class MusicLibraryWindow extends JFrame {
         add(bottomPanel, BorderLayout.SOUTH);
 
 
-//        setVisible(true);
         loadSongsFromLibraryFolder();
         renderSongList();
 
         // Timer to monitor current playing song
         Timer songChecker = new Timer(1000, e -> {
             Song current = musicPlayer.getCurrentSong();
+//            queueViewerWindow = new QueueViewerWindow(musicPlayer);
+//            queueViewerWindow.setVisible(true);
+
+            if (queueViewerWindow != null && queueViewerWindow.isDisplayable()) {
+                queueViewerWindow.updateQueueUI(musicPlayer.getQueue());
+            }
             if (current != null) {
                 String display = current.getSongTitle() + " - " + current.getSongArtist();
                 if (!nowPlayingText.getText().equals(display)) {
@@ -334,6 +361,12 @@ public class MusicLibraryWindow extends JFrame {
             JPopupMenu popupMenu = new JPopupMenu();
 
             JMenuItem queueItem = new JMenuItem("Queue");
+            queueItem.addActionListener(e -> {
+                musicPlayer.addToQueue(song);
+                if (queueViewerWindow != null && queueViewerWindow.isDisplayable()) {
+                    queueViewerWindow.updateQueueUI(musicPlayer.getQueue());
+                }
+            });
             JMenuItem playlistItem = new JMenuItem("Add to Playlist");
             JMenuItem removeItem = new JMenuItem("Remove");
 
@@ -341,7 +374,7 @@ public class MusicLibraryWindow extends JFrame {
             popupMenu.add(playlistItem);
             popupMenu.add(removeItem);
 
-            // Only implement remove for now
+            // remove
             removeItem.addActionListener(e -> {
                 File songFile = new File(song.getFilePath());
                 if (songFile.exists()) songFile.delete();
@@ -367,6 +400,7 @@ public class MusicLibraryWindow extends JFrame {
 
     private void updateNowPlayingSong(Song song){
         nowPlayingText.setText(song.getSongTitle() + " - " + song.getSongArtist());
+
     }
 
     private void performSearch() {
@@ -426,5 +460,16 @@ public class MusicLibraryWindow extends JFrame {
             renderSongList();
         }
     }
+
+    public void showQueueViewer() {
+        if (queueViewerWindow == null || !queueViewerWindow.isDisplayable()) {
+            queueViewerWindow = new QueueViewerWindow(musicPlayer);
+        } else {
+            queueViewerWindow.updateQueueUI(musicPlayer.getQueue());
+        }
+        queueViewerWindow.setVisible(true);
+    }
+
+
 
 }
