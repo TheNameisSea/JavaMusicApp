@@ -31,6 +31,7 @@ public class MusicPlayerGUI extends JFrame {
     private JPanel playbackBtns;
 
     private JSlider playbackSlider;
+    private JLabel  timeLabel;
 
     public MusicPlayerGUI(){
         // Use JFrame constructor to configure the GUI
@@ -114,9 +115,8 @@ public class MusicPlayerGUI extends JFrame {
                 musicPlayer.setCurrentFrame(frame);
 
                 // Update current time
-                musicPlayer.setCurrentTimeInMilli(
-                    (int) (frame / (2.08 * musicPlayer.getCurrentSong().getFrameRatePerMilliseconds()))
-                );
+                int miliSecond = (int) (frame / (2.08 * musicPlayer.getCurrentSong().getFrameRatePerMilliseconds()));
+                musicPlayer.setCurrentTimeInMilli(miliSecond);
 
                 // Resume song
                 musicPlayer.playCurrentSong();
@@ -225,9 +225,6 @@ public class MusicPlayerGUI extends JFrame {
         playlistMenu.add(loadPlaylist);
 
         add(toolBar);
-
-
-
     }
 
     private void addPlaybackBtns(){
@@ -311,26 +308,37 @@ public class MusicPlayerGUI extends JFrame {
     public void updatePlaybackSlider(Song song){
         // Update max count for slider
         playbackSlider.setMaximum(song.getMp3File().getFrameCount());
-
         // Create song length label
         Hashtable<Integer, JLabel> labelTable = new Hashtable<>();
 
         // Song beginning
-        JLabel labelBeginning = new JLabel("00:00");
-        labelBeginning.setFont(new Font("Dialog", Font.BOLD, 18));
-        labelBeginning.setForeground(TEXT_COLOR);
+        timeLabel = new JLabel("00:00");
+        timeLabel.setFont(new Font("Dialog", Font.BOLD, 18));
+        timeLabel.setForeground(TEXT_COLOR);
 
         // Song ending
         JLabel labelEnd = new JLabel(song.getSongLength());
         labelEnd.setFont(new Font("Dialog", Font.BOLD, 18));
         labelEnd.setForeground(TEXT_COLOR);
 
-        labelTable.put(0, labelBeginning);
+        labelTable.put(0, timeLabel);
         labelTable.put(song.getMp3File().getFrameCount(), labelEnd);
 
         playbackSlider.setLabelTable(labelTable);
         playbackSlider.setPaintLabels(true);
 
+    }
+
+    public void updateTimeLabel(int currentTimeInMilli){
+        if (timeLabel == null) return;
+
+        // Convert milliseconds to mm:ss
+        int seconds = (int) (currentTimeInMilli * 2.08) / 1000;
+        int minutes = seconds / 60;
+        seconds = seconds % 60;
+        String timeString = String.format("%02d:%02d", minutes, seconds);
+
+        timeLabel.setText(timeString);
     }
 
     public void updateCoverImage(Song song){

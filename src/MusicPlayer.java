@@ -291,6 +291,7 @@ public class MusicPlayer extends PlaybackListener {
 
                         // Update GUI
                         musicPlayerGUI.setPlaybackSliderValue(calculatedFrame);
+                        musicPlayerGUI.updateTimeLabel(currentTimeInMilli);
                         Thread.sleep(1);
                     } catch (Exception e) {
                         e.printStackTrace();
