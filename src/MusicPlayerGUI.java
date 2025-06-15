@@ -189,19 +189,6 @@ public class MusicPlayerGUI extends JFrame {
         });
         songMenu.add(loadSong);
 
-//        // Add library menu
-//        JMenu libraryMenu = new JMenu("Library");
-//        menuBar.add(libraryMenu);
-//
-//        JMenuItem openLibrary = new JMenuItem("Open Library");
-//
-//        openLibrary.addActionListener(e -> {
-//
-//            musicLibraryWindow.toFront();
-//            musicLibraryWindow.requestFocus();
-//
-//        });
-//        libraryMenu.add(openLibrary);
 
         // Add playlist menu
         JMenu playlistMenu = new JMenu("Playlist");

@@ -2,6 +2,7 @@ import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
@@ -39,10 +40,71 @@ public class MusicLibraryWindow extends JFrame {
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
 
-        // --- Top Bar (Search + Add) ---
+
+
+
+        // --- Top Bar (Search + Add + Menu) ---
         JPanel topPanel = new JPanel(new BorderLayout());
+        JToolBar toolBar = new JToolBar();
+        toolBar.setBounds(0, 0, getWidth(), 20);
+        toolBar.setFloatable(false);
+        JMenuBar menuBar = new JMenuBar();
+        toolBar.add(menuBar);
         JPanel searchFieldPanel = new JPanel(new BorderLayout());
         JPanel rightTopPanel = new JPanel(new BorderLayout());
+
+        JMenu songMenu = new JMenu("Song");
+        menuBar.add(songMenu);
+        JMenuItem loadSong = new JMenuItem("Add Song");
+
+//        JButton addSongBtn = new JButton("＋");
+//        addSongBtn.setToolTipText("Add Song");
+//        addSongBtn.setMargin(new Insets(0, 5, 0, 5));
+        loadSong.addActionListener(e -> addSongToLibrary());
+        songMenu.add(loadSong);
+
+        // Add playlist menu
+        JMenu playlistMenu = new JMenu("Playlist");
+        menuBar.add(playlistMenu);
+
+        // Add current playlist
+        JMenuItem currentPlaylist = new JMenuItem("Current Playlist");
+        playlistMenu.add(currentPlaylist);
+
+        // Add new playlist
+        JMenuItem createPlaylist = new JMenuItem("Create Playlist");
+        createPlaylist.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                // load music playlist dialog
+                new MusicPlaylistDialog(musicPlayerGUI).setVisible(true);
+            }
+        });
+        playlistMenu.add(createPlaylist);
+
+        JMenuItem loadPlaylist = new JMenuItem("Load Playlist");
+        loadPlaylist.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                JFileChooser jFileChooser = new JFileChooser();
+                jFileChooser.setFileFilter(new FileNameExtensionFilter("playlist", "txt"));
+                jFileChooser.setCurrentDirectory(new File("src/playlist"));
+
+                int result = jFileChooser.showOpenDialog(musicPlayerGUI);
+                File selectedFile = jFileChooser.getSelectedFile();
+
+                if(result == JFileChooser.APPROVE_OPTION && selectedFile != null){
+                    // stop the music
+                    musicPlayer.stopSong();
+
+                    // load playlist
+                    musicPlayer.loadPlaylist(selectedFile);
+                }
+            }
+        });
+        playlistMenu.add(loadPlaylist);
+
+        topPanel.add(toolBar, BorderLayout.NORTH);
 
         // Search Bar
         searchBar = new JTextField();
@@ -65,20 +127,16 @@ public class MusicLibraryWindow extends JFrame {
 
         topPanel.add(searchFieldPanel, BorderLayout.CENTER);
 
-        JButton searchBtn = new JButton("Search Exact");
-        JButton searchClosestBtn = new JButton("Search Closest");
-        searchBtn.addActionListener(e -> performSearch());
+//        JButton searchBtn = new JButton("Search Exact");
+        JButton searchClosestBtn = new JButton("Search");
+//        searchBtn.addActionListener(e -> performSearch());
         searchClosestBtn.addActionListener(e -> performClosestSearch());
-        rightTopPanel.add(searchBtn, BorderLayout.SOUTH);
+//        rightTopPanel.add(searchBtn, BorderLayout.SOUTH);
         rightTopPanel.add(searchClosestBtn, BorderLayout.NORTH);
         topPanel.add(rightTopPanel, BorderLayout.EAST);
 
 
-        JButton addSongBtn = new JButton("＋");
-        addSongBtn.setToolTipText("Add Song");
-        addSongBtn.setMargin(new Insets(0, 5, 0, 5));
-        addSongBtn.addActionListener(e -> addSongToLibrary());
-        topPanel.add(addSongBtn, BorderLayout.WEST);
+
 
         // Sort panel above the songs
         JPanel sortPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
@@ -338,7 +396,6 @@ public class MusicLibraryWindow extends JFrame {
 
     }
 
-    // --- Add Song Function ---
     private void addSongToLibrary() {
         JFileChooser fileChooser = new JFileChooser();
         fileChooser.setFileFilter(new FileNameExtensionFilter("MP3 Files", "mp3"));
@@ -369,4 +426,5 @@ public class MusicLibraryWindow extends JFrame {
             renderSongList();
         }
     }
+
 }
