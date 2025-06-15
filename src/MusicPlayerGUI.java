@@ -17,9 +17,11 @@ public class MusicPlayerGUI extends JFrame {
     public static final Color FRAME_COLOR = Color.BLACK;
     public static final Color TEXT_COLOR = Color.WHITE;
 
-    private MusicPlayer musicPlayer;
+    public MusicPlayer musicPlayer;
 
     private MusicLibraryWindow musicLibraryWindow;
+
+    private Song currentSong;
 
     // Allow file explorer
     private JFileChooser jFileChooser;
@@ -38,7 +40,7 @@ public class MusicPlayerGUI extends JFrame {
         setSize(400, 600);
 
         // End process if app is closed
-        setDefaultCloseOperation(EXIT_ON_CLOSE);
+//        setDefaultCloseOperation(EXIT_ON_CLOSE);
 
         // Launch app at screen center
         setLocationRelativeTo(null);
@@ -52,7 +54,7 @@ public class MusicPlayerGUI extends JFrame {
         getContentPane().setBackground(FRAME_COLOR);
 
         musicPlayer = new MusicPlayer(this);
-        musicLibraryWindow = new MusicLibraryWindow(this, musicPlayer);
+        musicLibraryWindow = new MusicLibraryWindow(this);
 
         jFileChooser = new JFileChooser();
 
@@ -162,6 +164,7 @@ public class MusicPlayerGUI extends JFrame {
                 if (result == JFileChooser.APPROVE_OPTION && selectedFile!=null){
                     // Create a song obj
                     Song song = new Song(selectedFile.getPath());
+                    currentSong = song;
 
                     // Update playback slider
                     updatePlaybackSlider(song);
@@ -186,17 +189,19 @@ public class MusicPlayerGUI extends JFrame {
         });
         songMenu.add(loadSong);
 
-        // Add library menu
-        JMenu libraryMenu = new JMenu("Library");
-        menuBar.add(libraryMenu);
-
-        JMenuItem openLibrary = new JMenuItem("Open Library");
-
-        openLibrary.addActionListener(e -> {
-            // For now, assume the library is a list containing just the current song
-            musicLibraryWindow.setVisible(true);
-        });
-        libraryMenu.add(openLibrary);
+//        // Add library menu
+//        JMenu libraryMenu = new JMenu("Library");
+//        menuBar.add(libraryMenu);
+//
+//        JMenuItem openLibrary = new JMenuItem("Open Library");
+//
+//        openLibrary.addActionListener(e -> {
+//
+//            musicLibraryWindow.toFront();
+//            musicLibraryWindow.requestFocus();
+//
+//        });
+//        libraryMenu.add(openLibrary);
 
         // Add playlist menu
         JMenu playlistMenu = new JMenu("Playlist");
@@ -390,7 +395,7 @@ public class MusicPlayerGUI extends JFrame {
 
     }
 
-    private ImageIcon loadImage(String imagePath){
+    public ImageIcon loadImage(String imagePath){
         try {
             // Read image file from path
             BufferedImage image = ImageIO.read(new File(imagePath));

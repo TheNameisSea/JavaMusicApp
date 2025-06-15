@@ -24,16 +24,19 @@ public class MusicLibraryWindow extends JFrame {
     public static final HashMap<String, String> songMap = new HashMap<>();
     private final SongTree songTreeNew = new SongTree();
 
-    public MusicLibraryWindow(MusicPlayerGUI musicPlayerGUI, MusicPlayer musicPlayer) {
+    private JLabel nowPlayingText;
+    private boolean isAscending = true;  // Default is A → Z
+
+    public MusicLibraryWindow(MusicPlayerGUI musicPlayerGUI) {
         this.musicPlayerGUI = musicPlayerGUI;
-        this.musicPlayer = musicPlayer;
+        this.musicPlayer = musicPlayerGUI.musicPlayer;
         this.allSongs = new ArrayList<>();
         this.displayedSongs = new ArrayList<>();
 
         setTitle("Music Library");
-        setSize(450, 600);
+        setSize(900, 600);
         setLocationRelativeTo(null);
-        setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
 
         // --- Top Bar (Search + Add) ---
@@ -62,7 +65,7 @@ public class MusicLibraryWindow extends JFrame {
 
         topPanel.add(searchFieldPanel, BorderLayout.CENTER);
 
-        JButton searchBtn = new JButton("Search");
+        JButton searchBtn = new JButton("Search Exact");
         JButton searchClosestBtn = new JButton("Search Closest");
         searchBtn.addActionListener(e -> performSearch());
         searchClosestBtn.addActionListener(e -> performClosestSearch());
@@ -77,9 +80,36 @@ public class MusicLibraryWindow extends JFrame {
         addSongBtn.addActionListener(e -> addSongToLibrary());
         topPanel.add(addSongBtn, BorderLayout.WEST);
 
+        // Sort panel above the songs
+        JPanel sortPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+//        sortPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 0, 10));
+        sortPanel.setBackground(Color.WHITE);
 
+        JLabel sortLabel = new JLabel("Sort:");
+        JButton sortToggleButton = new JButton("↓ A → Z");
+
+        sortToggleButton.setBorderPainted(false);   // No border
+        sortToggleButton.setContentAreaFilled(false); // No background fill
+        sortToggleButton.setFocusPainted(false);    // No focus border when clicked
+        sortToggleButton.setOpaque(false);
+
+        sortToggleButton.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
+        sortToggleButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        sortToggleButton.addActionListener(e -> {
+            isAscending = !isAscending;
+            sortToggleButton.setText(isAscending ? "↓ A → Z" : "↑ Z → A");
+            renderSongList();  // Re-render song list based on new order
+        });
+
+        sortPanel.add(sortLabel);
+        sortPanel.add(sortToggleButton);
+
+        topPanel.add(sortPanel, BorderLayout.SOUTH);
 
         add(topPanel, BorderLayout.NORTH);
+
+
+
 
         // --- Center Song List ---
         songListPanel = new JPanel();
@@ -89,10 +119,54 @@ public class MusicLibraryWindow extends JFrame {
         scrollPane.getVerticalScrollBar().setUnitIncrement(16);
         add(scrollPane, BorderLayout.CENTER);
 
+        // --- Currently Playing ---
+        JPanel bottomPanel = new JPanel(new BorderLayout());
+        bottomPanel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
+        bottomPanel.setBackground(new Color(245, 245, 245));
+
+        JLabel nowPlayingLabel = new JLabel("🎵 Now Playing: ");
+        nowPlayingText = new JLabel("No song playing");
+        nowPlayingText.setFont(new Font("Dialog", Font.BOLD, 14));
+
+        bottomPanel.add(nowPlayingLabel, BorderLayout.WEST);
+        bottomPanel.add(nowPlayingText, BorderLayout.CENTER);
+
+        bottomPanel.addMouseListener(new MouseAdapter() {
+            private long lastClickTime = 0;
+
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                // Double click = play song
+                long currentTime = System.currentTimeMillis();
+                if (currentTime - lastClickTime < 400) {  // Double click threshold
+                    musicPlayerGUI.setVisible(true);
+                }
+                lastClickTime = currentTime;
+            }
+        });
+
+        add(bottomPanel, BorderLayout.SOUTH);
+
 
 //        setVisible(true);
         loadSongsFromLibraryFolder();
         renderSongList();
+
+        // Timer to monitor current playing song
+        Timer songChecker = new Timer(1000, e -> {
+            Song current = musicPlayer.getCurrentSong();
+            if (current != null) {
+                String display = current.getSongTitle() + " - " + current.getSongArtist();
+                if (!nowPlayingText.getText().equals(display)) {
+                    nowPlayingText.setText(display);
+                }
+            } else {
+                if (!nowPlayingText.getText().equals("No song playing")) {
+                    nowPlayingText.setText("No song playing");
+                }
+            }
+        });
+        songChecker.start();
     }
 
     private void loadSongsFromLibraryFolder() {
@@ -122,6 +196,10 @@ public class MusicLibraryWindow extends JFrame {
 
     private void renderSongList() {
         songListPanel.removeAll();
+        displayedSongs.sort((s1, s2) -> {
+            int cmp = songTreeNew.compare(s1, s2);
+            return isAscending ? cmp : -cmp;
+        });
 
         for (Song song : displayedSongs) {
             JPanel songPanel = new JPanel(new BorderLayout());
@@ -144,6 +222,7 @@ public class MusicLibraryWindow extends JFrame {
                         musicPlayerGUI.updatePlaybackSlider(song);
                         musicPlayerGUI.updateCoverImage(song);
                         musicPlayerGUI.enablePauseButtonDisablePlayButton();
+                        updateNowPlayingSong(song);
                     } else {
                         // Single click = select and highlight
                         if (selectedPanel != null) {
@@ -183,11 +262,31 @@ public class MusicLibraryWindow extends JFrame {
             infoPanel.add(artistLabel);
             songPanel.add(infoPanel, BorderLayout.CENTER);
 
-            // Delete button
-            JButton deleteBtn = new JButton("Delete");
-            deleteBtn.addActionListener(e -> {
+
+            // 3-dot menu button
+            JButton menuButton = new JButton("⋮");
+            menuButton.setFont(new Font("Dialog", Font.BOLD, 16));
+            menuButton.setFocusPainted(false);
+            menuButton.setBorderPainted(false);
+            menuButton.setContentAreaFilled(false);
+            menuButton.setOpaque(false);
+            menuButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+
+            // Popup menu
+            JPopupMenu popupMenu = new JPopupMenu();
+
+            JMenuItem queueItem = new JMenuItem("Queue");
+            JMenuItem playlistItem = new JMenuItem("Add to Playlist");
+            JMenuItem removeItem = new JMenuItem("Remove");
+
+            popupMenu.add(queueItem);
+            popupMenu.add(playlistItem);
+            popupMenu.add(removeItem);
+
+            // Only implement remove for now
+            removeItem.addActionListener(e -> {
                 File songFile = new File(song.getFilePath());
-//                if (songFile.exists()) songFile.delete();
+                if (songFile.exists()) songFile.delete();
 
                 allSongs.remove(song);
                 displayedSongs.remove(song);
@@ -195,13 +294,21 @@ public class MusicLibraryWindow extends JFrame {
                 songTreeNew.delete(song);
                 renderSongList();
             });
-            songPanel.add(deleteBtn, BorderLayout.EAST);
+
+            // Show popup on click
+            menuButton.addActionListener(e -> popupMenu.show(menuButton, 0, menuButton.getHeight()));
+
+            songPanel.add(menuButton, BorderLayout.EAST);
 
             songListPanel.add(songPanel);
         }
 
         songListPanel.revalidate();
         songListPanel.repaint();
+    }
+
+    private void updateNowPlayingSong(Song song){
+        nowPlayingText.setText(song.getSongTitle() + " - " + song.getSongArtist());
     }
 
     private void performSearch() {

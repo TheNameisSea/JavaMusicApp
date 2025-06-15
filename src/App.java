@@ -8,7 +8,12 @@ public class App {
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
-                new MusicPlayerGUI().setVisible(true);
+
+////                musicPlayerGUI.setVisible(true);
+                MusicLibraryWindow musicLibraryWindow = new MusicLibraryWindow(new MusicPlayerGUI());
+                musicLibraryWindow.setVisible(true);
+
+                
 
 //                Song song = new Song("src/assets/Tetoris-_-テトリス-_-重音テトSV.mp3");
 //                System.out.println(song.getSongTitle());
