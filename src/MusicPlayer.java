@@ -340,8 +340,9 @@ public class MusicPlayer extends PlaybackListener {
                 musicPlayerGUI.enablePauseButtonDisablePlayButton();
 
                 playCurrentSong();
-                startMusicThread();
-                startPlaybackSliderThread();
+
+
+
 
             } else if (playlist == null) {
                 return;
