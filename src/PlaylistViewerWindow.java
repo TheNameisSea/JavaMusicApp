@@ -3,6 +3,7 @@ import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.util.Collections;
 import java.util.LinkedList;
 
 public class PlaylistViewerWindow extends JFrame {
@@ -45,7 +46,19 @@ public class PlaylistViewerWindow extends JFrame {
 
         buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         JButton shuffleButton = new JButton("Shuffle");
+        shuffleButton.addActionListener(e -> {
+            Collections.shuffle(playlist);
+            musicPlayer.setIndex(musicPlayer.getIndex(musicPlayer.getCurrentSong()));
+            renderSongPanels(playlist, musicPlayerGUI.musicPlayer, musicPlayerGUI);
+        });
+        JButton playButton = new JButton("▶");
+        playButton.addActionListener(e -> {
+            musicPlayer.setIndex(-1);
+            musicPlayer.nextSong();
+        });
+
         buttonPanel.add(shuffleButton);
+        buttonPanel.add(playButton);
 
 
         topPanel.add(buttonPanel, BorderLayout.EAST);
@@ -129,20 +142,8 @@ public class PlaylistViewerWindow extends JFrame {
                     long currentTime = System.currentTimeMillis();
                     if (currentTime - lastClickTime < 400) {
                         // Double click = play
-                        musicPlayerGUI.setPlaybackSliderValue(0);
-                        musicPlayer.setCurrentTimeInMilli(0);
-
-                        musicPlayer.setCurrentSong(song);
-                        musicPlayer.setCurrentFrame(0);
-                        musicPlayer.resetVariable();
-
-                        musicPlayer.stopSong();
-                        musicPlayer.playCurrentSong();
-
-                        musicPlayerGUI.updateSongTitleAndArtist(song);
-                        musicPlayerGUI.updatePlaybackSlider(song);
-                        musicPlayerGUI.updateCoverImage(song);
-                        musicPlayerGUI.enablePauseButtonDisablePlayButton();
+                        musicPlayer.setIndex(song); // Set the playlist index to the previous song
+                        musicPlayer.nextSong(); // Play the next song
                     } else {
                         // Single click = select
                         if (selectedPanel != null) {

@@ -26,6 +26,26 @@ public class MusicPlayer extends PlaybackListener {
     private LinkedList<Song> playlist;
     // Index to keep track of the current song in the linked list
     private int currentPlaylistIndex;
+    public void setIndex(Song song){
+        int index = playlist.indexOf(song);
+        if (index != -1){
+            currentPlaylistIndex = index - 1;
+        }
+    }
+
+    public void setIndex(int index){
+        if (index < playlist.size()){
+            currentPlaylistIndex = index;
+        }
+    }
+
+    public int getIndex(){
+        return currentPlaylistIndex;
+    }
+
+    public int getIndex(Song song){
+        return playlist.indexOf(song);
+    }
 
     // AdvancedPlayer obj to handle music
     private AdvancedPlayer advancedPlayer;
@@ -57,6 +77,23 @@ public class MusicPlayer extends PlaybackListener {
         pressedPrev = false;
     }
 
+    private void resetCurrentSong(){
+        if(!songFinished)
+            stopSong();
+
+        // reset frame
+        currentFrame = 0;
+
+        // reset current time in milli
+        currentTimeInMilli = 0;
+
+        musicPlayerGUI.updateGUI(currentSong);
+        musicPlayerGUI.setPlaybackSliderValue(0);
+        musicPlayerGUI.updatePlaybackSlider(currentSong);
+        musicPlayerGUI.enablePauseButtonDisablePlayButton();
+        resetVariable();
+    }
+
     // Constructor
     public MusicPlayer(MusicPlayerGUI musicPlayerGUI){
         this.musicPlayerGUI = musicPlayerGUI;
@@ -73,14 +110,8 @@ public class MusicPlayer extends PlaybackListener {
 
         // Play song
         if (currentSong != null){
-            currentFrame = 0;
-            currentTimeInMilli = 0;
-
-            // Update GUI
-            musicPlayerGUI.setPlaybackSliderValue(0);
-
             // Reset values
-            resetVariable();
+            resetCurrentSong();
 
             playCurrentSong();
 
@@ -88,7 +119,7 @@ public class MusicPlayer extends PlaybackListener {
 
     }
 
-    public void loadPlaylist(File playlistFile){
+    public boolean loadPlaylist(File playlistFile){
         playlist = new LinkedList<>();
         HashMap<String, String> songMap = MusicLibraryWindow.songMap;
         // store the paths from the text file into the playlist array list
@@ -107,28 +138,20 @@ public class MusicPlayer extends PlaybackListener {
                     playlist.add(song);
                 }
             }
+
+            return true;
         }catch(Exception e){
             e.printStackTrace();
+            return false;
         }
 
-        if(!playlist.isEmpty()){
-            // reset playback slider
-            musicPlayerGUI.setPlaybackSliderValue(0);
-            currentTimeInMilli = 0;
-
-            // update current song to the first song in the playlist
-            currentSong = playlist.getFirst();
-
-            // start from the beginning frame
-            currentFrame = 0;
-
-            // update gui
-            musicPlayerGUI.updateGUI(currentSong);
-            resetVariable();
-
-            // start song
-            playCurrentSong();
-        }
+//        if(!playlist.isEmpty()){
+//            // update current song to the first song in the playlist
+//            currentSong = playlist.getFirst();
+//            resetCurrentSong();
+//            // start song
+//            playCurrentSong();
+//        }
     }
 
     public void pauseSong(){
@@ -147,6 +170,15 @@ public class MusicPlayer extends PlaybackListener {
     }
 
     public void nextSong(){
+        // Play all the song in the queue first, then the song in the playlists
+        if (!songQueue.isEmpty()){
+            pressedNext = true;
+            currentSong = songQueue.poll();
+            resetCurrentSong();
+            playCurrentSong();
+            return;
+        }
+
         // no need to go to the next song if there is no playlist
         if(playlist == null) return;
 
@@ -164,18 +196,7 @@ public class MusicPlayer extends PlaybackListener {
 
         // update current song
         currentSong = playlist.get(currentPlaylistIndex);
-
-
-        // reset frame
-        currentFrame = 0;
-
-        // reset current time in milli
-        currentTimeInMilli = 0;
-
-
-        // update gui
-        musicPlayerGUI.updateGUI(currentSong);
-        resetVariable();
+        resetCurrentSong();
 
         // play the song
         playCurrentSong();
@@ -200,15 +221,7 @@ public class MusicPlayer extends PlaybackListener {
 
         // update current song
         currentSong = playlist.get(currentPlaylistIndex);
-
-        // reset frame
-        currentFrame = 0;
-
-        // reset current time in milli
-        currentTimeInMilli = 0;
-
-        // update gui
-        musicPlayerGUI.updateGUI(currentSong);
+        resetCurrentSong();
         resetVariable();
 
         // play the song
@@ -332,14 +345,8 @@ public class MusicPlayer extends PlaybackListener {
 
             if (!songQueue.isEmpty()) {
                 currentSong = songQueue.poll();
-
-                currentFrame = 0;
-                currentTimeInMilli = 0;
-                musicPlayerGUI.updateGUI(currentSong);
-                musicPlayerGUI.setPlaybackSliderValue(0);
-                musicPlayerGUI.updatePlaybackSlider(currentSong);
                 musicPlayerGUI.enablePauseButtonDisablePlayButton();
-
+                resetCurrentSong();
                 playCurrentSong();
 
 
