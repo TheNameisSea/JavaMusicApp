@@ -16,6 +16,11 @@ class SongMatch implements Comparable<SongMatch> {
     public int compareTo(SongMatch other) {
         return Integer.compare(this.score, other.score);
     }
+
+    @Override
+    public String toString() {
+        return song.toString() + ": " + score;
+    }
 }
 
 class ClosestTracker {
@@ -403,10 +408,14 @@ public class SongTree implements Comparator<Song> {
             result.add(pq.poll().song);
             count++;
         }
-
         return result;
     }
 
+    public ArrayList<Song> getSortedSongList(){
+        ArrayList<Song> songs = new ArrayList<>();
+        inOrder(root, songs);
+        return songs;
+    }
 
 
     // Utility functions for traversal
@@ -418,11 +427,11 @@ public class SongTree implements Comparator<Song> {
         }
     }
 
-    void inOrder(Node node) {
+    void inOrder(Node node, ArrayList<Song> songs) {
         if (node != null) {
-            inOrder(node.left);
-            System.out.print(node.key + ", ");
-            inOrder(node.right);
+            inOrder(node.left, songs);
+            songs.add(node.key);
+            inOrder(node.right, songs);
         }
     }
 
