@@ -69,7 +69,7 @@ public class MusicPlayerGUI extends JFrame {
 
     private void addGuiComponents(){
         // Add toolbar
-        addToolbar();
+//        addToolbar();
 
         // Load music image
         songImage = new JLabel(loadImage("src/assets/record.png"));

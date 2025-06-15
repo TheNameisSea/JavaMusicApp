@@ -31,6 +31,8 @@ public class MusicLibraryWindow extends JFrame {
     private JLabel nowPlayingText;
     private boolean isAscending = true;  // Default is A → Z
 
+    String currentPlaylistName;
+
     public MusicLibraryWindow(MusicPlayerGUI musicPlayerGUI) {
         this.musicPlayerGUI = musicPlayerGUI;
         this.musicPlayer = musicPlayerGUI.musicPlayer;
@@ -88,7 +90,7 @@ public class MusicLibraryWindow extends JFrame {
                     return;
                 }
 
-                String playlistName = "Loaded Playlist";
+                String playlistName = currentPlaylistName;
 
                 new PlaylistViewerWindow(playlistName, playlist, musicPlayer, musicPlayerGUI).setVisible(true);
             }
@@ -116,15 +118,21 @@ public class MusicLibraryWindow extends JFrame {
                 int result = jFileChooser.showOpenDialog(musicPlayerGUI);
                 File selectedFile = jFileChooser.getSelectedFile();
 
-                if(result == JFileChooser.APPROVE_OPTION && selectedFile != null){
+                if(result == JFileChooser.APPROVE_OPTION && selectedFile != null && musicPlayer.loadPlaylist(selectedFile)){
                     // stop the music
                     musicPlayer.stopSong();
 
                     // load playlist
                     musicPlayer.loadPlaylist(selectedFile);
+
+                    LinkedList<Song> playlist = musicPlayer.getPlaylist();
+                    String playlistName = selectedFile.getName().replace(".txt", "");
+                    currentPlaylistName = playlistName;
+                    new PlaylistViewerWindow(playlistName, playlist, musicPlayerGUI.musicPlayer, musicPlayerGUI);
+                } else{
+                    JOptionPane.showMessageDialog(MusicLibraryWindow.this,
+                            "Playlist file cannot be loaded.", "Warning", JOptionPane.WARNING_MESSAGE);
                 }
-                LinkedList<Song> playlist = musicPlayer.getPlaylist();
-                new PlaylistViewerWindow("My Playlist", playlist, musicPlayerGUI.musicPlayer, musicPlayerGUI);
             }
         });
 
