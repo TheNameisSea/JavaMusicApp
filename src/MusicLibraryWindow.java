@@ -9,6 +9,7 @@ import java.awt.image.BufferedImage;
 import java.io.*;
 import java.nio.file.*;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 
@@ -177,6 +178,7 @@ public class MusicLibraryWindow extends JFrame {
         sortToggleButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         sortToggleButton.addActionListener(e -> {
             isAscending = !isAscending;
+            Collections.reverse(displayedSongs);
             sortToggleButton.setText(isAscending ? "↓ A → Z" : "↑ Z → A");
             renderSongList();  // Re-render song list based on new order
         });
@@ -269,22 +271,17 @@ public class MusicLibraryWindow extends JFrame {
 
                 // Basic Song object (artist unknown here)
                 Song song = new Song(path);
-                allSongs.add(song);
                 songMap.put(song.getSongTitle(), path);
                 songTreeNew.insert(song);
             }
         }
-
+        allSongs.addAll(songTreeNew.getSortedSongList());
         displayedSongs.clear();
         displayedSongs.addAll(allSongs);
     }
 
     private void renderSongList() {
         songListPanel.removeAll();
-        displayedSongs.sort((s1, s2) -> {
-            int cmp = songTreeNew.compare(s1, s2);
-            return isAscending ? cmp : -cmp;
-        });
 
         for (Song song : displayedSongs) {
             JPanel songPanel = new JPanel(new BorderLayout());
@@ -403,18 +400,18 @@ public class MusicLibraryWindow extends JFrame {
 
     }
 
-    private void performSearch() {
-        String keyword = searchBar.getText();
-        displayedSongs.clear();
-
-        if (keyword.isEmpty()) {
-            displayedSongs.addAll(allSongs);
-        } else {
-            ArrayList<Song> matches = songTreeNew.searchNearestLexico(keyword, 3);
-            displayedSongs.addAll(matches);
-        }
-        renderSongList();
-    }
+//    private void performSearch() {
+//        String keyword = searchBar.getText();
+//        displayedSongs.clear();
+//
+//        if (keyword.isEmpty()) {
+//            displayedSongs.addAll(allSongs);
+//        } else {
+//            ArrayList<Song> matches = songTreeNew.searchNearestLexico(keyword, 3);
+//            displayedSongs.addAll(matches);
+//        }
+//        renderSongList();
+//    }
 
     private void performClosestSearch(){
         String keyword = searchBar.getText();
