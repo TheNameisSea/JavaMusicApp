@@ -33,7 +33,6 @@ public class MusicPlayer extends PlaybackListener {
         if (index != -1){
             currentPlaylistIndex = index;
         }
-        System.out.println("Set index: " + currentPlaylistIndex);
     }
 
     public void setIndex(int index){
@@ -171,7 +170,6 @@ public class MusicPlayer extends PlaybackListener {
             advancedPlayer.close();
             advancedPlayer = null;
         }
-        System.out.println("In stop: " + currentPlaylistIndex);
     }
 
     public void nextSong(){
@@ -240,7 +238,6 @@ public class MusicPlayer extends PlaybackListener {
         currentSong = playlist.get(currentPlaylistIndex);
         resetCurrentSong();
         playCurrentSong();
-        System.out.println(currentPlaylistIndex);
     }
 
     public void playCurrentSong(){
@@ -331,7 +328,6 @@ public class MusicPlayer extends PlaybackListener {
 
     @Override
     public void playbackStarted(PlaybackEvent evt) {
-        System.out.println("Playback Started");
         songFinished = false;
         pressedNext = false;
         pressedPrev = false;
@@ -339,7 +335,6 @@ public class MusicPlayer extends PlaybackListener {
 
     @Override
     public void playbackFinished(PlaybackEvent evt) {
-        System.out.println("Playback Finished");
 
         if (isPaused){
             currentFrame += (int) ((double) evt.getFrame() * currentSong.getFrameRatePerMilliseconds());
