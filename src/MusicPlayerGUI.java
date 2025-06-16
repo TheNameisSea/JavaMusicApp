@@ -95,7 +95,7 @@ public class MusicPlayerGUI extends JFrame {
         // Playback slider
         playbackSlider = new JSlider(JSlider.HORIZONTAL, 0, 100, 0);
         playbackSlider.setBounds(getWidth()/2 - 300/2, 365, 300, 40);
-        playbackSlider.setBackground(null);
+        playbackSlider.setBackground(Color.white);
         playbackSlider.addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
