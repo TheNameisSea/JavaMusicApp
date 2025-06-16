@@ -13,6 +13,8 @@ public class MusicPlayer extends PlaybackListener {
 
     private Queue<Song> songQueue = new LinkedList<>();
 
+    public boolean playingFromPlaylist = false;
+
     // Song class to store song details
     private Song currentSong;
     public Song getCurrentSong(){
@@ -29,12 +31,13 @@ public class MusicPlayer extends PlaybackListener {
     public void setIndex(Song song){
         int index = playlist.indexOf(song);
         if (index != -1){
-            currentPlaylistIndex = index - 1;
+            currentPlaylistIndex = index;
         }
+        System.out.println("Set index: " + currentPlaylistIndex);
     }
 
     public void setIndex(int index){
-        if (index < playlist.size()){
+        if (index < playlist.size() && index >= 0){
             currentPlaylistIndex = index;
         }
     }
@@ -102,6 +105,7 @@ public class MusicPlayer extends PlaybackListener {
     public void loadSong(Song song){
         currentSong = song;
         playlist = null;
+        playingFromPlaylist = false;
 
         if (!songFinished){
             stopSong();
@@ -167,11 +171,13 @@ public class MusicPlayer extends PlaybackListener {
             advancedPlayer.close();
             advancedPlayer = null;
         }
+        System.out.println("In stop: " + currentPlaylistIndex);
     }
 
     public void nextSong(){
         // Play all the song in the queue first, then the song in the playlists
         if (!songQueue.isEmpty()){
+            playingFromPlaylist = false;
             pressedNext = true;
             currentSong = songQueue.poll();
             resetCurrentSong();
@@ -181,7 +187,7 @@ public class MusicPlayer extends PlaybackListener {
 
         // no need to go to the next song if there is no playlist
         if(playlist == null) return;
-
+        playingFromPlaylist = true;
         // check to see if we have reached the end of the playlist, if so then don't do anything
         if(currentPlaylistIndex + 1 > playlist.size() - 1) return;
 
@@ -206,6 +212,7 @@ public class MusicPlayer extends PlaybackListener {
     public void prevSong(){
         // no need to go to the next song if there is no playlist
         if(playlist == null) return;
+        playingFromPlaylist = true;
 
         // check to see if we can go to the previous song
         if(currentPlaylistIndex - 1 < 0) return;
@@ -222,10 +229,18 @@ public class MusicPlayer extends PlaybackListener {
         // update current song
         currentSong = playlist.get(currentPlaylistIndex);
         resetCurrentSong();
-        resetVariable();
 
         // play the song
         playCurrentSong();
+    }
+
+    public void playCurrentPlaylist(){
+        playingFromPlaylist = true;
+        pressedNext = true;
+        currentSong = playlist.get(currentPlaylistIndex);
+        resetCurrentSong();
+        playCurrentSong();
+        System.out.println(currentPlaylistIndex);
     }
 
     public void playCurrentSong(){
@@ -353,27 +368,17 @@ public class MusicPlayer extends PlaybackListener {
 
 
             } else if (playlist == null) {
-                return;
+                musicPlayerGUI.enablePlayButtonDisablePauseButton();
+                playingFromPlaylist = false;
             } else if (currentPlaylistIndex == playlist.size() - 1) {
                 // update gui
                 musicPlayerGUI.enablePlayButtonDisablePauseButton();
+                playingFromPlaylist = true;
             } else {
                 nextSong();
+                playingFromPlaylist = true;
             }
 
-//            if(playlist == null){
-//                // update gui
-//                musicPlayerGUI.enablePlayButtonDisablePauseButton();
-//            }else{
-//                // last song in the playlist
-//                if(currentPlaylistIndex == playlist.size() - 1){
-//                    // update gui
-//                    musicPlayerGUI.enablePlayButtonDisablePauseButton();
-//                }else{
-//                    // go to the next song in the playlist
-//                    nextSong();
-//                }
-//            }
         }
 
     }
