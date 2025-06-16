@@ -7,6 +7,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.io.*;
+import java.io.FileWriter;
 import java.nio.file.*;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -29,6 +30,7 @@ public class MusicLibraryWindow extends JFrame {
     private final SongTree songTreeNew = new SongTree();
 
     private JLabel nowPlayingText;
+    private JLabel nowPlayingLabel;
     private boolean isAscending = true;  // Default is A → Z
 
     String currentPlaylistName;
@@ -92,7 +94,8 @@ public class MusicLibraryWindow extends JFrame {
 
                 String playlistName = currentPlaylistName;
 
-                new PlaylistViewerWindow(playlistName, playlist, musicPlayer, musicPlayerGUI).setVisible(true);
+                new PlaylistViewerWindow(playlistName, playlist, musicPlayer, musicPlayerGUI, MusicLibraryWindow.this).setVisible(true);
+                setVisible(false);
             }
         });
 
@@ -119,16 +122,14 @@ public class MusicLibraryWindow extends JFrame {
                 File selectedFile = jFileChooser.getSelectedFile();
 
                 if(result == JFileChooser.APPROVE_OPTION && selectedFile != null && musicPlayer.loadPlaylist(selectedFile)){
-                    // stop the music
-                    musicPlayer.stopSong();
-
                     // load playlist
                     musicPlayer.loadPlaylist(selectedFile);
 
                     LinkedList<Song> playlist = musicPlayer.getPlaylist();
                     String playlistName = selectedFile.getName().replace(".txt", "");
                     currentPlaylistName = playlistName;
-                    new PlaylistViewerWindow(playlistName, playlist, musicPlayerGUI.musicPlayer, musicPlayerGUI);
+                    new PlaylistViewerWindow(playlistName, playlist, musicPlayerGUI.musicPlayer, musicPlayerGUI, MusicLibraryWindow.this);
+                    setVisible(false);
                 } else{
                     JOptionPane.showMessageDialog(MusicLibraryWindow.this,
                             "Playlist file cannot be loaded.", "Warning", JOptionPane.WARNING_MESSAGE);
@@ -214,7 +215,7 @@ public class MusicLibraryWindow extends JFrame {
         bottomPanel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
         bottomPanel.setBackground(new Color(245, 245, 245));
 
-        JLabel nowPlayingLabel = new JLabel("🎵 Now Playing: ");
+        nowPlayingLabel = new JLabel("🎵 Now Playing: ");
         nowPlayingText = new JLabel("No song playing");
         nowPlayingText.setFont(new Font("Dialog", Font.BOLD, 14));
 
@@ -241,6 +242,10 @@ public class MusicLibraryWindow extends JFrame {
         loadSongsFromLibraryFolder();
         renderSongList();
 
+        checkCurrentSong();
+    }
+
+    public void checkCurrentSong(){
         // Timer to monitor current playing song
         Timer songChecker = new Timer(1000, e -> {
             Song current = musicPlayer.getCurrentSong();
@@ -251,6 +256,12 @@ public class MusicLibraryWindow extends JFrame {
                 queueViewerWindow.updateQueueUI(musicPlayer.getQueue());
             }
             if (current != null) {
+                // Is currently play a playlist
+                if (musicPlayer.playingFromPlaylist){
+                    String text = String.format("🎵 Now Playing from %s: ", currentPlaylistName);
+                    nowPlayingLabel.setText(text);
+                }
+                else nowPlayingLabel.setText("🎵 Now Playing: ");
                 String display = current.getSongTitle() + " - " + current.getSongArtist();
                 if (!nowPlayingText.getText().equals(display)) {
                     nowPlayingText.setText(display);
@@ -373,6 +384,39 @@ public class MusicLibraryWindow extends JFrame {
                 }
             });
             JMenuItem playlistItem = new JMenuItem("Add to Playlist");
+            playlistItem.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    JFileChooser jFileChooser = new JFileChooser();
+                    jFileChooser.setFileFilter(new FileNameExtensionFilter("playlist", "txt"));
+                    jFileChooser.setCurrentDirectory(new File("src/playlist"));
+
+                    int result = jFileChooser.showOpenDialog(musicPlayerGUI);
+                    File selectedFile = jFileChooser.getSelectedFile();
+
+                    if(result == JFileChooser.APPROVE_OPTION && selectedFile != null && musicPlayer.loadPlaylist(selectedFile)){
+                        // now we will write all of the song paths into this file
+                        FileWriter fileWriter = null;
+                        try {
+                            fileWriter = new FileWriter(selectedFile, true);
+
+                            BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
+
+                            bufferedWriter.write(song.getSongTitle() + "\n");
+                            bufferedWriter.close();
+                        } catch (IOException ex) {
+                            throw new RuntimeException(ex);
+                        }
+                        // Reload playlist
+                        musicPlayer.loadPlaylist(selectedFile);
+
+                    } else{
+                        JOptionPane.showMessageDialog(MusicLibraryWindow.this,
+                                "Playlist file cannot be loaded.", "Warning", JOptionPane.WARNING_MESSAGE);
+                    }
+                }
+            });
+
             JMenuItem removeItem = new JMenuItem("Remove");
 
             popupMenu.add(queueItem);
@@ -475,6 +519,9 @@ public class MusicLibraryWindow extends JFrame {
         queueViewerWindow.setVisible(true);
     }
 
-
+    public void setGUIVisible(boolean b){
+        setVisible(b);
+        checkCurrentSong();
+    }
 
 }

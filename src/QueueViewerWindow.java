@@ -114,4 +114,8 @@ public class QueueViewerWindow extends JFrame {
 
 
     }
+
+    public LinkedList<Song> getSongQueue() {
+        return songQueue;
+    }
 }
