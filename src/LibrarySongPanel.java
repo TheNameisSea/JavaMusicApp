@@ -59,38 +59,3 @@ public abstract class LibrarySongPanel extends SongPanel {
         }
     }
 }
-
-
-//songListPanel.removeAll();
-//
-//        for (Song song : playlist){
-//SongPanel panel = new LibrarySongPanel(song, this, musicPlayer, musicLibraryWindow.getQueueViewerWindow()){
-//    @Override
-//    public void onClick(Song song) {
-//        if (selectedPanel != null) {
-//            selectedPanel.setBackground(Color.WHITE);
-//        }
-//        setBackground(new Color(220, 220, 255));
-//        selectedPanel = this;
-//    }
-//
-//    @Override
-//    public void onDoubleClick(Song song) {
-//        musicPlayer.loadSong(song);
-//        musicPlayerGUI.updateGUI(song);
-//        updateNowPlayingSong(song);
-//    }
-//    @Override
-//    public void onRemove(Song song) {
-//        File songFile = new File(song.getFilePath());
-//        if (songFile.exists()) songFile.delete();
-//        playlist.remove(song);
-//        renderSongPanels();
-//    }
-//};
-//
-//            songListPanel.add(panel);
-//        }
-//
-//                songListPanel.revalidate();
-//        songListPanel.repaint();

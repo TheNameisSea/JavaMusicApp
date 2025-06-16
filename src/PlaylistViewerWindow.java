@@ -161,35 +161,35 @@ public class PlaylistViewerWindow extends JFrame {
             songListPanel.removeAll();
 
             for (Song song : playlist){
-            SongPanel panel = new LibrarySongPanel(song, this, musicPlayer, musicLibraryWindow.getQueueViewerWindow()){
-                @Override
-                public void onClick(Song song) {
-                    if (selectedPanel != null) {
-                        selectedPanel.setBackground(Color.WHITE);
+                SongPanel panel = new LibrarySongPanel(song, this, musicPlayer, musicLibraryWindow.getQueueViewerWindow()){
+                    @Override
+                    public void onClick(Song song) {
+                        if (selectedPanel != null) {
+                            selectedPanel.setBackground(Color.WHITE);
+                        }
+                        setBackground(new Color(220, 220, 255));
+                        selectedPanel = this;
                     }
-                    setBackground(new Color(220, 220, 255));
-                    selectedPanel = this;
-                }
 
-                @Override
-                public void onDoubleClick(Song song) {
-                    musicPlayer.setIndex(song); // Set the playlist index to the song
-                    musicPlayer.playCurrentPlaylist();
-                    updateNowPlayingSong(song);
-                }
-                @Override
-                public void onRemove(Song song) {
-                    File songFile = new File(song.getFilePath());
-                    if (songFile.exists()) songFile.delete();
-                    playlist.remove(song);
-                    renderSongPanels(playlist, musicPlayerGUI.musicPlayer, musicPlayerGUI, musicLibraryWindow);
-                }
-            };
+                    @Override
+                    public void onDoubleClick(Song song) {
+                        musicPlayer.setIndex(song); // Set the playlist index to the song
+                        musicPlayer.playCurrentPlaylist();
+                        updateNowPlayingSong(song);
+                    }
+                    @Override
+                    public void onRemove(Song song) {
+                        File songFile = new File(song.getFilePath());
+                        if (songFile.exists()) songFile.delete();
+                        playlist.remove(song);
+                        renderSongPanels(playlist, musicPlayerGUI.musicPlayer, musicPlayerGUI, musicLibraryWindow);
+                    }
+                };
 
                 songListPanel.add(panel);
             }
 
-                    songListPanel.revalidate();
+            songListPanel.revalidate();
             songListPanel.repaint();
     }
 
