@@ -13,6 +13,8 @@ public class MusicPlayer extends PlaybackListener {
 
     private Queue<Song> songQueue = new LinkedList<>();
 
+    public boolean playingFromPlaylist = false;
+
     // Song class to store song details
     private Song currentSong;
     public Song getCurrentSong(){
@@ -29,12 +31,12 @@ public class MusicPlayer extends PlaybackListener {
     public void setIndex(Song song){
         int index = playlist.indexOf(song);
         if (index != -1){
-            currentPlaylistIndex = index - 1;
+            currentPlaylistIndex = index;
         }
     }
 
     public void setIndex(int index){
-        if (index < playlist.size()){
+        if (index < playlist.size() && index >= 0){
             currentPlaylistIndex = index;
         }
     }
@@ -57,6 +59,8 @@ public class MusicPlayer extends PlaybackListener {
     private volatile boolean songFinished;
 
     private volatile boolean pressedNext, pressedPrev;
+
+    public boolean repeated = false;
 
     // Current frame
     private int currentFrame;
@@ -102,6 +106,9 @@ public class MusicPlayer extends PlaybackListener {
     public void loadSong(Song song){
         currentSong = song;
         playlist = null;
+        playingFromPlaylist = false;
+        repeated = false;
+        musicPlayerGUI.updateRepeatButton();
 
         if (!songFinished){
             stopSong();
@@ -170,8 +177,17 @@ public class MusicPlayer extends PlaybackListener {
     }
 
     public void nextSong(){
+        if (repeated){
+            System.out.println(currentSong);
+            pressedNext = true;
+            resetCurrentSong();
+            playCurrentSong();
+            return;
+        }
+
         // Play all the song in the queue first, then the song in the playlists
         if (!songQueue.isEmpty()){
+            playingFromPlaylist = false;
             pressedNext = true;
             currentSong = songQueue.poll();
             resetCurrentSong();
@@ -181,7 +197,7 @@ public class MusicPlayer extends PlaybackListener {
 
         // no need to go to the next song if there is no playlist
         if(playlist == null) return;
-
+        playingFromPlaylist = true;
         // check to see if we have reached the end of the playlist, if so then don't do anything
         if(currentPlaylistIndex + 1 > playlist.size() - 1) return;
 
@@ -206,6 +222,7 @@ public class MusicPlayer extends PlaybackListener {
     public void prevSong(){
         // no need to go to the next song if there is no playlist
         if(playlist == null) return;
+        playingFromPlaylist = true;
 
         // check to see if we can go to the previous song
         if(currentPlaylistIndex - 1 < 0) return;
@@ -222,9 +239,22 @@ public class MusicPlayer extends PlaybackListener {
         // update current song
         currentSong = playlist.get(currentPlaylistIndex);
         resetCurrentSong();
-        resetVariable();
 
         // play the song
+        playCurrentSong();
+    }
+
+    public void repeatSong(){
+        repeated = !repeated;
+    }
+
+    public void playCurrentPlaylist(){
+        repeated = false;
+        musicPlayerGUI.updateRepeatButton();
+        playingFromPlaylist = true;
+        pressedNext = true;
+        currentSong = playlist.get(currentPlaylistIndex);
+        resetCurrentSong();
         playCurrentSong();
     }
 
@@ -316,7 +346,6 @@ public class MusicPlayer extends PlaybackListener {
 
     @Override
     public void playbackStarted(PlaybackEvent evt) {
-        System.out.println("Playback Started");
         songFinished = false;
         pressedNext = false;
         pressedPrev = false;
@@ -324,7 +353,6 @@ public class MusicPlayer extends PlaybackListener {
 
     @Override
     public void playbackFinished(PlaybackEvent evt) {
-        System.out.println("Playback Finished");
 
         if (isPaused){
             currentFrame += (int) ((double) evt.getFrame() * currentSong.getFrameRatePerMilliseconds());
@@ -333,47 +361,27 @@ public class MusicPlayer extends PlaybackListener {
 
             songFinished = true;
 
-            // Check if we need to play the next song in queue
-//            if (!songQueue.isEmpty()) {
-//                currentSong = songQueue.poll();
-//                playCurrentSong();
-//            } else if (playlist != null && currentPlaylistIndex + 1 < playlist.size()) {
-//                currentPlaylistIndex++;
-//                currentSong = playlist.get(currentPlaylistIndex);
-//                playCurrentSong();
-//            }
-
             if (!songQueue.isEmpty()) {
                 currentSong = songQueue.poll();
                 musicPlayerGUI.enablePauseButtonDisablePlayButton();
                 resetCurrentSong();
                 playCurrentSong();
 
-
-
-
+            } else if(repeated){
+                resetCurrentSong();
+                playCurrentSong();
             } else if (playlist == null) {
-                return;
+                musicPlayerGUI.enablePlayButtonDisablePauseButton();
+                playingFromPlaylist = false;
             } else if (currentPlaylistIndex == playlist.size() - 1) {
                 // update gui
                 musicPlayerGUI.enablePlayButtonDisablePauseButton();
+                playingFromPlaylist = true;
             } else {
                 nextSong();
+                playingFromPlaylist = true;
             }
 
-//            if(playlist == null){
-//                // update gui
-//                musicPlayerGUI.enablePlayButtonDisablePauseButton();
-//            }else{
-//                // last song in the playlist
-//                if(currentPlaylistIndex == playlist.size() - 1){
-//                    // update gui
-//                    musicPlayerGUI.enablePlayButtonDisablePauseButton();
-//                }else{
-//                    // go to the next song in the playlist
-//                    nextSong();
-//                }
-//            }
         }
 
     }

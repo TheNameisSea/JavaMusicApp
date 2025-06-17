@@ -7,6 +7,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.io.*;
+import java.io.FileWriter;
 import java.nio.file.*;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -28,10 +29,11 @@ public class MusicLibraryWindow extends JFrame {
     public static final HashMap<String, String> songMap = new HashMap<>();
     private final SongTree songTreeNew = new SongTree();
 
-    private JLabel nowPlayingText;
+    private final JLabel nowPlayingText;
+    private final JLabel nowPlayingLabel;
     private boolean isAscending = true;  // Default is A → Z
 
-    String currentPlaylistName;
+    private String currentPlaylistName;
 
     public MusicLibraryWindow(MusicPlayerGUI musicPlayerGUI) {
         this.musicPlayerGUI = musicPlayerGUI;
@@ -92,7 +94,8 @@ public class MusicLibraryWindow extends JFrame {
 
                 String playlistName = currentPlaylistName;
 
-                new PlaylistViewerWindow(playlistName, playlist, musicPlayer, musicPlayerGUI).setVisible(true);
+                new PlaylistViewerWindow(playlistName, playlist, musicPlayerGUI.musicPlayer, musicPlayerGUI, MusicLibraryWindow.this).setVisible(true);
+                setVisible(false);
             }
         });
 
@@ -119,16 +122,14 @@ public class MusicLibraryWindow extends JFrame {
                 File selectedFile = jFileChooser.getSelectedFile();
 
                 if(result == JFileChooser.APPROVE_OPTION && selectedFile != null && musicPlayer.loadPlaylist(selectedFile)){
-                    // stop the music
-                    musicPlayer.stopSong();
-
                     // load playlist
                     musicPlayer.loadPlaylist(selectedFile);
 
                     LinkedList<Song> playlist = musicPlayer.getPlaylist();
                     String playlistName = selectedFile.getName().replace(".txt", "");
                     currentPlaylistName = playlistName;
-                    new PlaylistViewerWindow(playlistName, playlist, musicPlayerGUI.musicPlayer, musicPlayerGUI);
+                    new PlaylistViewerWindow(playlistName, playlist, musicPlayerGUI.musicPlayer ,musicPlayerGUI, MusicLibraryWindow.this);
+                    setVisible(false);
                 } else{
                     JOptionPane.showMessageDialog(MusicLibraryWindow.this,
                             "Playlist file cannot be loaded.", "Warning", JOptionPane.WARNING_MESSAGE);
@@ -214,7 +215,7 @@ public class MusicLibraryWindow extends JFrame {
         bottomPanel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
         bottomPanel.setBackground(new Color(245, 245, 245));
 
-        JLabel nowPlayingLabel = new JLabel("🎵 Now Playing: ");
+        nowPlayingLabel = new JLabel("🎵 Now Playing: ");
         nowPlayingText = new JLabel("No song playing");
         nowPlayingText.setFont(new Font("Dialog", Font.BOLD, 14));
 
@@ -241,6 +242,10 @@ public class MusicLibraryWindow extends JFrame {
         loadSongsFromLibraryFolder();
         renderSongList();
 
+        checkCurrentSong();
+    }
+
+    public void checkCurrentSong(){
         // Timer to monitor current playing song
         Timer songChecker = new Timer(1000, e -> {
             Song current = musicPlayer.getCurrentSong();
@@ -250,16 +255,7 @@ public class MusicLibraryWindow extends JFrame {
             if (queueViewerWindow != null && queueViewerWindow.isDisplayable()) {
                 queueViewerWindow.updateQueueUI(musicPlayer.getQueue());
             }
-            if (current != null) {
-                String display = current.getSongTitle() + " - " + current.getSongArtist();
-                if (!nowPlayingText.getText().equals(display)) {
-                    nowPlayingText.setText(display);
-                }
-            } else {
-                if (!nowPlayingText.getText().equals("No song playing")) {
-                    nowPlayingText.setText("No song playing");
-                }
-            }
+            updateNowPlayingSong(current);
         });
         songChecker.start();
     }
@@ -291,112 +287,36 @@ public class MusicLibraryWindow extends JFrame {
     private void renderSongList() {
         songListPanel.removeAll();
 
-        for (Song song : displayedSongs) {
-            JPanel songPanel = new JPanel(new BorderLayout());
-            songPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-            songPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 80));
-            songPanel.setBackground(Color.WHITE);
-            songPanel.setCursor(new Cursor(Cursor.HAND_CURSOR));
-
-            // Mouse listener for selection and playback
-            songPanel.addMouseListener(new MouseAdapter() {
-                private long lastClickTime = 0;
+        for (Song song : displayedSongs){
+            SongPanel panel = new LibrarySongPanel(song, this, musicPlayer, queueViewerWindow){
+                @Override
+                public void onClick(Song song) {
+                    if (selectedPanel != null) {
+                        selectedPanel.setBackground(Color.WHITE);
+                    }
+                    setBackground(new Color(220, 220, 255));
+                    selectedPanel = this;
+                }
 
                 @Override
-                public void mouseClicked(MouseEvent e) {
-                    // Double click = play song
-                    long currentTime = System.currentTimeMillis();
-                    if (currentTime - lastClickTime < 400) {  // Double click threshold
-                        musicPlayer.loadSong(song);
-                        musicPlayerGUI.updateSongTitleAndArtist(song);
-                        musicPlayerGUI.updatePlaybackSlider(song);
-                        musicPlayerGUI.updateCoverImage(song);
-                        musicPlayerGUI.enablePauseButtonDisablePlayButton();
-                        updateNowPlayingSong(song);
-                    } else {
-                        // Single click = select and highlight
-                        if (selectedPanel != null) {
-                            selectedPanel.setBackground(Color.WHITE);  // Deselect previous
-                        }
-                        songPanel.setBackground(new Color(220, 220, 255));  // Light blue highlight
-                        selectedPanel = songPanel;
-                    }
-                    lastClickTime = currentTime;
+                public void onDoubleClick(Song song) {
+                    musicPlayer.loadSong(song);
+                    musicPlayerGUI.updateGUI(song);
+                    updateNowPlayingSong(song);
                 }
-            });
-
-            // Image
-            JLabel imageLabel = new JLabel();
-            BufferedImage cover = song.getCoverImage();
-            if (cover != null) {
-                imageLabel.setIcon(new ImageIcon(cover.getScaledInstance(64, 64, Image.SCALE_SMOOTH)));
-            } else {
-                imageLabel.setIcon(new ImageIcon(new ImageIcon("src/assets/record.png").getImage().getScaledInstance(64, 64, Image.SCALE_SMOOTH)));
-            }
-            imageLabel.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 10));
-            songPanel.add(imageLabel, BorderLayout.WEST);
-
-            // Title + Artist
-            JPanel infoPanel = new JPanel();
-            infoPanel.setLayout(new BoxLayout(infoPanel, BoxLayout.Y_AXIS));
-            infoPanel.setOpaque(false);  // Don't override panel bg
-
-            JLabel titleLabel = new JLabel(song.getSongTitle());
-            titleLabel.setFont(new Font("Dialog", Font.BOLD, 16));
-
-            JLabel artistLabel = new JLabel(song.getSongArtist());
-            artistLabel.setFont(new Font("Dialog", Font.PLAIN, 12));
-            artistLabel.setForeground(Color.GRAY);
-
-            infoPanel.add(titleLabel);
-            infoPanel.add(artistLabel);
-            songPanel.add(infoPanel, BorderLayout.CENTER);
-
-
-            // 3-dot menu button
-            JButton menuButton = new JButton("⋮");
-            menuButton.setFont(new Font("Dialog", Font.BOLD, 16));
-            menuButton.setFocusPainted(false);
-            menuButton.setBorderPainted(false);
-            menuButton.setContentAreaFilled(false);
-            menuButton.setOpaque(false);
-            menuButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-
-            // Popup menu
-            JPopupMenu popupMenu = new JPopupMenu();
-
-            JMenuItem queueItem = new JMenuItem("Queue");
-            queueItem.addActionListener(e -> {
-                musicPlayer.addToQueue(song);
-                if (queueViewerWindow != null && queueViewerWindow.isDisplayable()) {
-                    queueViewerWindow.updateQueueUI(musicPlayer.getQueue());
+                @Override
+                public void onRemove(Song song) {
+                    File songFile = new File(song.getFilePath());
+                    if (songFile.exists()) songFile.delete();
+                    allSongs.remove(song);
+                    displayedSongs.remove(song);
+                    songMap.remove(song.getSongTitle());
+                    songTreeNew.delete(song);
+                    renderSongList();
                 }
-            });
-            JMenuItem playlistItem = new JMenuItem("Add to Playlist");
-            JMenuItem removeItem = new JMenuItem("Remove");
+            };
 
-            popupMenu.add(queueItem);
-            popupMenu.add(playlistItem);
-            popupMenu.add(removeItem);
-
-            // remove
-            removeItem.addActionListener(e -> {
-                File songFile = new File(song.getFilePath());
-                if (songFile.exists()) songFile.delete();
-
-                allSongs.remove(song);
-                displayedSongs.remove(song);
-                songMap.remove(song.getSongTitle());
-                songTreeNew.delete(song);
-                renderSongList();
-            });
-
-            // Show popup on click
-            menuButton.addActionListener(e -> popupMenu.show(menuButton, 0, menuButton.getHeight()));
-
-            songPanel.add(menuButton, BorderLayout.EAST);
-
-            songListPanel.add(songPanel);
+            songListPanel.add(panel);
         }
 
         songListPanel.revalidate();
@@ -404,8 +324,21 @@ public class MusicLibraryWindow extends JFrame {
     }
 
     private void updateNowPlayingSong(Song song){
-        nowPlayingText.setText(song.getSongTitle() + " - " + song.getSongArtist());
+        if (song != null) {
+            // Is currently play a playlist
+            if (musicPlayer.playingFromPlaylist){
+                String text = String.format("🎵 Now Playing from %s: ", currentPlaylistName);
+                nowPlayingLabel.setText(text);
+            }
+            else nowPlayingLabel.setText("🎵 Now Playing: ");
 
+            String display = song.getSongTitle() + " - " + song.getSongArtist();
+            if (!nowPlayingText.getText().equals(display)) {
+                nowPlayingText.setText(display);
+            }
+        } else if (!nowPlayingText.getText().equals("No song playing")) {
+            nowPlayingText.setText("No song playing");
+        }
     }
 
     private void performClosestSearch(){
@@ -462,6 +395,13 @@ public class MusicLibraryWindow extends JFrame {
         queueViewerWindow.setVisible(true);
     }
 
+    public void setGUIVisible(boolean b){
+        setVisible(b);
+        checkCurrentSong();
+    }
 
+    public QueueViewerWindow getQueueViewerWindow(){
+        return queueViewerWindow;
+    }
 
 }

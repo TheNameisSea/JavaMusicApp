@@ -29,6 +29,9 @@ public class MusicPlayerGUI extends JFrame {
     private JLabel songTitle, songArtist;
     private JLabel songImage;
     private JPanel playbackBtns;
+    private JButton playButton;
+    private JButton pauseButton;
+    private JButton repeatButton;
 
     private JSlider playbackSlider;
     private JLabel  timeLabel;
@@ -228,9 +231,14 @@ public class MusicPlayerGUI extends JFrame {
     }
 
     private void addPlaybackBtns(){
-        playbackBtns = new JPanel();
-        playbackBtns.setBounds(0, 435, getWidth()-10, 80);
+        playbackBtns = new JPanel(new BorderLayout());
+        playbackBtns.setBounds(50, 435, getWidth()-100, 80);
         playbackBtns.setBackground(null);
+
+        JPanel centerPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 0));
+        centerPanel.setOpaque(false);  // Keep background transparent
+        centerPanel.setBackground(null);
+        centerPanel.setBounds(0,0,centerPanel.getWidth(), 80);
 
         // Prev button
         JButton prevButton = new JButton(loadImage("src/assets/previous.png"));
@@ -243,10 +251,10 @@ public class MusicPlayerGUI extends JFrame {
                 musicPlayer.prevSong();
             }
         });
-        playbackBtns.add(prevButton);
+        centerPanel.add(prevButton);
 
         // Play button
-        JButton playButton = new JButton(loadImage("src/assets/play.png"));
+        playButton = new JButton(loadImage("src/assets/play.png"));
         playButton.setBorderPainted(false);
         playButton.setBackground(null);
         playButton.addActionListener(new ActionListener() {
@@ -256,10 +264,10 @@ public class MusicPlayerGUI extends JFrame {
                 musicPlayer.playCurrentSong();
             }
         });
-        playbackBtns.add(playButton);
+        centerPanel.add(playButton);
 
         // Pause button
-        JButton pauseButton = new JButton(loadImage("src/assets/pause.png"));
+        pauseButton = new JButton(loadImage("src/assets/pause.png"));
         pauseButton.setBorderPainted(false);
         pauseButton.setBackground(null);
         pauseButton.setVisible(false);
@@ -270,7 +278,7 @@ public class MusicPlayerGUI extends JFrame {
                 musicPlayer.pauseSong();
             }
         });
-        playbackBtns.add(pauseButton);
+        centerPanel.add(pauseButton);
 
         // Next button
         JButton nextButton = new JButton(loadImage("src/assets/next.png"));
@@ -283,9 +291,69 @@ public class MusicPlayerGUI extends JFrame {
                 musicPlayer.nextSong();
             }
         });
-        playbackBtns.add(nextButton);
+        centerPanel.add(nextButton);
+
+        playbackBtns.add(centerPanel, BorderLayout.CENTER);
+
+        // Repeat button
+        JPanel repeatWrapper = new JPanel();
+        repeatWrapper.setOpaque(false); // Transparent
+        repeatWrapper.setBackground(null);
+        repeatWrapper.setAlignmentY(CENTER_ALIGNMENT);
+
+        repeatButton = new JButton("⟳");
+        repeatButton.setBorderPainted(false);
+        repeatButton.setBackground(null);
+        repeatButton.setFont(new Font("Dialog", Font.BOLD, 25));;
+        repeatButton.setForeground(TEXT_COLOR);
+        repeatButton.setBounds(0,0, repeatButton.getWidth(), repeatButton.getHeight());
+        repeatButton.setAlignmentY(CENTER_ALIGNMENT);
+        updateRepeatButton();
+
+        repeatButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                // go to the next song
+                musicPlayer.repeatSong();
+                updateRepeatButton();
+            }
+        });
+        repeatWrapper.add(repeatButton, BorderLayout.WEST);
+
+        playbackBtns.add(repeatWrapper,  BorderLayout.EAST);
+
+        // Repeat button
+        JPanel menuWrapper = new JPanel();
+        menuWrapper.setOpaque(false); // Transparent
+        menuWrapper.setBackground(null);
+        menuWrapper.setBounds(20,0,menuWrapper.getWidth(), menuWrapper.getHeight());
+        menuWrapper.setAlignmentY(CENTER_ALIGNMENT);
+
+        JButton menuButton = new JButton("⋮");
+        menuButton.setBorderPainted(false);
+        menuButton.setBackground(null);
+        menuButton.setFont(new Font("Dialog", Font.BOLD, 25));;
+        menuButton.setForeground(Color.WHITE);
+        menuButton.setBounds(0,0, repeatButton.getWidth(), repeatButton.getHeight());
+        menuButton.setAlignmentY(CENTER_ALIGNMENT);
+        menuButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                // go to the next song
+                musicPlayer.repeatSong();
+            }
+        });
+        menuWrapper.add(menuButton, BorderLayout.WEST);
+
+        playbackBtns.add(menuWrapper,  BorderLayout.WEST);
 
         add(playbackBtns);
+    }
+
+    public void updateRepeatButton(){
+        if (musicPlayer != null && musicPlayer.repeated){
+            repeatButton.setForeground(new Color(66, 135, 245));
+        }else repeatButton.setForeground(TEXT_COLOR);
     }
 
     public void updateGUI(Song song){
@@ -354,11 +422,6 @@ public class MusicPlayerGUI extends JFrame {
     }
 
     public void enablePauseButtonDisablePlayButton(){
-
-        // Get component at index 1/2 of Jbutton (play / pause)
-        JButton playButton = (JButton) playbackBtns.getComponent(1);
-        JButton pauseButton = (JButton) playbackBtns.getComponent(2);
-
         // Turn off play
         playButton.setVisible(false);
         playButton.setEnabled(false);
@@ -371,11 +434,6 @@ public class MusicPlayerGUI extends JFrame {
     }
 
     public void enablePlayButtonDisablePauseButton(){
-
-        // Get component at index 1/2 of Jbutton (play / pause)
-        JButton playButton = (JButton) playbackBtns.getComponent(1);
-        JButton pauseButton = (JButton) playbackBtns.getComponent(2);
-
         // Turn off pause
         pauseButton.setVisible(false);
         pauseButton.setEnabled(false);
