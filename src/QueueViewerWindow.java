@@ -11,6 +11,7 @@ public class QueueViewerWindow extends JFrame {
     private JPanel queuePanel;
     private MusicPlayer musicPlayer;
     private LinkedList<Song> songQueue;
+    private JPanel selectedPanel = null;
 
     public QueueViewerWindow(MusicPlayer musicPlayer) {
         this.musicPlayer = musicPlayer;
@@ -42,66 +43,29 @@ public class QueueViewerWindow extends JFrame {
         Song playingSong = musicPlayer.getCurrentSong();
 
         for (Song song : queue) {
-            JPanel songPanel = new JPanel(new BorderLayout());
-            songPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-            songPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 80));
-            songPanel.setBackground(Color.WHITE);
-            songPanel.setCursor(new Cursor(Cursor.HAND_CURSOR));
-
-            // Cover image
-            JLabel imageLabel = new JLabel();
-            BufferedImage cover = song.getCoverImage();
-            if (cover != null) {
-                imageLabel.setIcon(new ImageIcon(cover.getScaledInstance(64, 64, Image.SCALE_SMOOTH)));
-            } else {
-                imageLabel.setIcon(new ImageIcon(new ImageIcon("src/assets/record.png").getImage().getScaledInstance(64, 64, Image.SCALE_SMOOTH)));
-            }
-            imageLabel.setBorder(BorderFactory.createEmptyBorder(0, 0, 10, 10));
-            songPanel.add(imageLabel, BorderLayout.WEST);
-
-            // Title and artist
-            JPanel infoPanel = new JPanel();
-            infoPanel.setLayout(new BoxLayout(infoPanel, BoxLayout.Y_AXIS));
-            infoPanel.setOpaque(false);
-
-            JLabel titleLabel = new JLabel(song.getSongTitle());
-            titleLabel.setFont(new Font("Dialog", Font.BOLD, 16));
-
-            JLabel artistLabel = new JLabel(song.getSongArtist());
-            artistLabel.setFont(new Font("Dialog", Font.PLAIN, 12));
-            artistLabel.setForeground(Color.GRAY);
-
-            infoPanel.add(titleLabel);
-            infoPanel.add(artistLabel);
-            songPanel.add(infoPanel, BorderLayout.CENTER);
-
-            // Remove button
-            JButton removeButton = new JButton("❌");
-            removeButton.setFocusPainted(false);
-            removeButton.setBorderPainted(false);
-            removeButton.setContentAreaFilled(false);
-            removeButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-            removeButton.addActionListener((ActionEvent e) -> {
-                musicPlayer.removeFromQueue(song);
-                renderQueue();
-            });
-            songPanel.add(removeButton, BorderLayout.EAST);
-
-            // Highlight selection
-            songPanel.addMouseListener(new MouseAdapter() {
+            QueueSongPanel queueSongPanel = new QueueSongPanel(song, musicPlayer, this) {
                 @Override
-                public void mouseClicked(MouseEvent e) {
-                    // Optional: single click highlight
-                    for (Component comp : queuePanel.getComponents()) {
-                        comp.setBackground(Color.WHITE);
+                public void onClick(Song song) {
+                    if (selectedPanel != null) {
+                        selectedPanel.setBackground(Color.WHITE);
                     }
-                    songPanel.setBackground(new Color(220, 220, 255));
+                    setBackground(new Color(220, 220, 255));
+                    selectedPanel = this;
                 }
-            });
 
+                @Override
+                public void onDoubleClick(Song song) {
 
+                }
 
-            queuePanel.add(songPanel);
+                @Override
+                public void onRemove(Song song) {
+                    musicPlayer.removeFromQueue(song);
+                    renderQueue();
+                }
+            };
+
+            queuePanel.add(queueSongPanel);
         }
 
         queuePanel.revalidate();

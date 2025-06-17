@@ -60,6 +60,8 @@ public class MusicPlayer extends PlaybackListener {
 
     private volatile boolean pressedNext, pressedPrev;
 
+    public boolean repeated = false;
+
     // Current frame
     private int currentFrame;
     public void setCurrentFrame(int frame){
@@ -105,6 +107,8 @@ public class MusicPlayer extends PlaybackListener {
         currentSong = song;
         playlist = null;
         playingFromPlaylist = false;
+        repeated = false;
+        musicPlayerGUI.updateRepeatButton();
 
         if (!songFinished){
             stopSong();
@@ -173,6 +177,14 @@ public class MusicPlayer extends PlaybackListener {
     }
 
     public void nextSong(){
+        if (repeated){
+            System.out.println(currentSong);
+            pressedNext = true;
+            resetCurrentSong();
+            playCurrentSong();
+            return;
+        }
+
         // Play all the song in the queue first, then the song in the playlists
         if (!songQueue.isEmpty()){
             playingFromPlaylist = false;
@@ -232,7 +244,13 @@ public class MusicPlayer extends PlaybackListener {
         playCurrentSong();
     }
 
+    public void repeatSong(){
+        repeated = !repeated;
+    }
+
     public void playCurrentPlaylist(){
+        repeated = false;
+        musicPlayerGUI.updateRepeatButton();
         playingFromPlaylist = true;
         pressedNext = true;
         currentSong = playlist.get(currentPlaylistIndex);
@@ -343,25 +361,15 @@ public class MusicPlayer extends PlaybackListener {
 
             songFinished = true;
 
-            // Check if we need to play the next song in queue
-//            if (!songQueue.isEmpty()) {
-//                currentSong = songQueue.poll();
-//                playCurrentSong();
-//            } else if (playlist != null && currentPlaylistIndex + 1 < playlist.size()) {
-//                currentPlaylistIndex++;
-//                currentSong = playlist.get(currentPlaylistIndex);
-//                playCurrentSong();
-//            }
-
             if (!songQueue.isEmpty()) {
                 currentSong = songQueue.poll();
                 musicPlayerGUI.enablePauseButtonDisablePlayButton();
                 resetCurrentSong();
                 playCurrentSong();
 
-
-
-
+            } else if(repeated){
+                resetCurrentSong();
+                playCurrentSong();
             } else if (playlist == null) {
                 musicPlayerGUI.enablePlayButtonDisablePauseButton();
                 playingFromPlaylist = false;
