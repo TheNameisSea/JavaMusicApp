@@ -408,19 +408,6 @@ public class MusicLibraryWindow extends JFrame {
 
     }
 
-//    private void performSearch() {
-//        String keyword = searchBar.getText();
-//        displayedSongs.clear();
-//
-//        if (keyword.isEmpty()) {
-//            displayedSongs.addAll(allSongs);
-//        } else {
-//            ArrayList<Song> matches = songTreeNew.searchNearestLexico(keyword, 3);
-//            displayedSongs.addAll(matches);
-//        }
-//        renderSongList();
-//    }
-
     private void performClosestSearch(){
         String keyword = searchBar.getText();
         displayedSongs.clear();
